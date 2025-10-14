@@ -1,6 +1,6 @@
 # Wolfram CLI Runbook
 
-Last verified: October 14, 2025 on macOS with Mathematica installed at `/Applications/Wolfram.app`.
+Last verified: October 14, 2025 on macOS with Mathematica installed at `/Applications/Wolfram.app`. See `FIELD_MANUAL.md` for an extended physics-focused CLI handbook built on these steps.
 
 ## Prerequisites
 

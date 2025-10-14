@@ -28,6 +28,7 @@ Lightweight notes and sanity checks for running Mathematica/Wolfram Engine tooli
 ## Documentation
 
 - `RUNBOOK.md` – detailed runbook covering installation checks, scripting patterns, argument handling, exports, and troubleshooting (last verified October 14, 2025).
+- `FIELD_MANUAL.md` – PhD-level CLI-first physics workflows with end-to-end scripts, argument parsing, and package guidance.
 
 ## Conventions
 
