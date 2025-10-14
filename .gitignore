@@ -1,0 +1,8 @@
+# Generated artifacts
+*.pdf
+
+# macOS
+.DS_Store
+
+# Wolfram notebooks (skip unless explicitly needed)
+*.nb
