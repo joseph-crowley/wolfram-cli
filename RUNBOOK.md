@@ -57,7 +57,7 @@ printf 'FactorInteger[2^61 - 1]\nQuit[]\n' | /Applications/Wolfram.app/Contents/
 
 - **One-liners:** Use `-code` for inline expressions. Append `// InputForm` or wrap with `ExportString[..., "JSON"]` for machine-friendly output.
 - **Reading from stdin:** Pipe expressions into `WolframKernel -noprompt`. Always terminate with `Quit[]` to exit cleanly.
-- **Script files:** Save `.wl` files and execute with `wolframscript -file script.wl`. For executables, add a shebang and `chmod +x script.wl`. Because the shebang uses `/usr/bin/env wolframscript`, the `wolframscript` binary must be discoverable on `PATH`. When running locally without modifying shell profiles, prefix commands with `PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH" ./script.wl`.
+- **Script files:** Save `.wl` files and execute with `wolframscript -file script.wl`. For executables, add a shebang and `chmod +x script.wl`. Because the shebang uses `/usr/bin/env wolframscript`, the `wolframscript` binary must be discoverable on `PATH`. When running locally without modifying shell profiles, prefix commands with `PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH" ./script.wl`. See `scripts/` for ready-made examples.
 
   ```wl
   #!/usr/bin/env wolframscript
@@ -78,6 +78,27 @@ printf 'FactorInteger[2^61 - 1]\nQuit[]\n' | /Applications/Wolfram.app/Contents/
 - **Headless graphics & exports:** `Export["plot.png", Plot[Sin[x], {x, 0, 2 Pi}]]` works without a notebook front end.
 - **Parallel control:** Default parallelization kicks in automatically for parallel constructs. Use `LaunchKernels[n]` or `SetSystemOptions["ParallelOptions" -> "ParallelThreadNumber" -> n]` for deterministic core counts.
 - **Exit codes:** Wrap top-level operations with `Check`/`If` and call `Exit[1]` or `Exit[0]` to propagate failures to calling shells.
+
+## Toolkit Conventions (scripts/)
+
+- Flags: All scripts accept `--key=value` (no spaces). Boolean flags are present-or-absent.
+- Symbolic JSON: Scripts that emit symbolic results (e.g., Fourier transforms) encode them as `InputForm` strings in JSON to remain strict-JSON compliant.
+- Reserved symbols: Avoid built-in names like `N` or `C` in variables/flags; scripts use ASCII names (`--n`, `--omega` etc.).
+- FEM license: FEM-heavy demos may require an appropriate license. If you see a license error, run numeric-only demos instead (`qho_eigs.wls`, `damped_oscillator.wls`).
+
+## Common Tasks with the Toolkit
+
+- Fourier Gaussian (JSON): `wolframscript -file scripts/fourier_gaussian.wls --mu=0 --sigma=1 --t=0`
+- Damped oscillator (CSV): `wolframscript -file scripts/damped_oscillator.wls --gamma=0.1 --omega0=1 --F=1 --Omega=1 --tmax=10 --out=x.csv`
+- QHO eigenvalues (JSON): `wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho_energies.json`
+- Partition function (JSON): `wolframscript -file scripts/partition_fn.wls --beta=1 --in=qho_energies.json`
+- Clebsch–Gordan (JSON): `wolframscript -file scripts/clebsch_gordan_table.wls --j1=1 --j2=1 --J=2`
+
+## Troubleshooting Updates
+
+- Protected symbols: If you see `Set::wrsym` or similar, rename variables/flags to non-protected names.
+- JSON failures (`Export::jsonstrictencoding`): Convert symbolic output with `ToString[..., InputForm]` prior to JSON export.
+- FEM errors: Run interval-domain PDEs (e.g., `qho_eigs.wls`) or skip FEM demos if license is unavailable.
 
 ## Troubleshooting
 

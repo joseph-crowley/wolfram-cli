@@ -1,6 +1,6 @@
 # wolframscript physics field manual
 
-Last verified: 14 Oct 2025 on macOS with Mathematica installed at `/Applications/Wolfram.app`.
+Last verified: 14 Oct 2025 on macOS with Mathematica installed at `/Applications/Wolfram.app`. The repository includes a runnable `scripts/` toolkit implementing the examples below with consistent `--key=value` flags and machine-readable outputs.
 
 ## 0. Why CLI Wolfram for Physics
 
@@ -133,7 +133,7 @@ Each script is a complete, runnable `.wls`. For every script:
 - all outputs are either `Print[...]` text or `Export[...,...]` files for downstream tools.
 - a one-line validation follows each file.
 
-> Save the files as shown, then run with `wolframscript -file <name>.wls ...`
+> Use the ready-made scripts in `scripts/`. All flags are `--key=value`.
 
 ### 6.1 Mathematical Methods for Physicists
 
@@ -168,7 +168,7 @@ If[TrueQ[json],
 ];
 ```
 
-Validation: `wolframscript -file fourier_gaussian.wls` emits a JSON record. References: transform machinery and parameters.
+Validation (toolkit): `wolframscript -file scripts/fourier_gaussian.wls --mu=0 --sigma=1 --t=0 | jq -r .transform` emits an InputForm string inside JSON. References: transform machinery and parameters.
 
 #### 6.1.2 Complex Analysis – Residue Extraction
 
@@ -181,7 +181,7 @@ res = Residue[f[z], {z, z0}];
 Print["Residue at z0 = ", z0 // InputForm, " is ", res // InputForm];
 ```
 
-Validation: `wolframscript -file residue_demo.wls` prints the residue. Reference: residue.
+Validation (toolkit): `wolframscript -file scripts/residue_demo.wls` prints `Residue at z0=I: 1`. Reference: residue.
 
 #### 6.1.3 Asymptotics – Stationary Phase Sketch
 
@@ -194,7 +194,7 @@ asym = AsymptoticIntegrate[expr, {x,-Infinity,Infinity}, λ -> Infinity, SeriesT
 Print[asym // InputForm];
 ```
 
-Validation: prints a two-term asymptotic series. Reference: asymptotic integrate.
+Validation (toolkit): `wolframscript -file scripts/asymptotic_integral.wls` prints a two-term asymptotic series. Reference: asymptotic integrate.
 
 ---
 
@@ -228,7 +228,7 @@ Export[out, data, "CSV"];
 Print["wrote ", out];
 ```
 
-Validation: `wolframscript -file damped_oscillator.wls --out resp.csv` writes `resp.csv`. Reference: `NDSolveValue`.
+Validation (toolkit): `wolframscript -file scripts/damped_oscillator.wls --gamma=0.1 --omega0=1 --F=1 --Omega=1 --tmax=50 --out=resp.csv` writes `resp.csv`. Reference: `NDSolveValue`.
 
 #### 6.2.2 Helmholtz on a Square – FEM PDE
 
@@ -255,7 +255,7 @@ Export["helmholtz.png",
 Print["mesh elements: ", mesh["MeshOrder"], " exported helmholtz.png"];
 ```
 
-Validation: `wolframscript -file helmholtz_square.wls` produces `helmholtz.png`. References: `ImplicitRegion`, `ToElementMesh`, FEM tutorial.
+Validation (toolkit): `wolframscript -file scripts/helmholtz_square.wls` produces `helmholtz.png` (requires FEM-enabled license). References: `ImplicitRegion`, `ToElementMesh`, FEM tutorial.
 
 ---
 
@@ -289,7 +289,7 @@ Export["qho_energies.json", energies, "JSON"];
 Print["E[0..", N-1, "] ≈ ", Take[energies, UpTo[6]] // InputForm];
 ```
 
-Validation: compare `E_n ~ ω (n + 1/2)` for `m=ω=1`, `L` large enough. Reference: `NDEigensystem`, FEM machinery.
+Validation (toolkit): `wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho_energies.json` then `jq . qho_energies.json`. Compare `E_n ~ ω (n + 1/2)` for `m=ω=1`, `L` large enough. Reference: `NDEigensystem`.
 
 #### 6.3.2 Angular Momentum Algebra – Clebsch-Gordan
 
@@ -311,7 +311,7 @@ vals = Flatten[Table[
 Print @ ExportString[<|"j1"->j1,"j2"->j2,"J"->J,"terms"->vals|>, "JSON"];
 ```
 
-Validation: `wolframscript -file clebsch_gordan_table.wls --j1 1 --j2 1 --J 2` emits nonzero couplings. References: `ClebschGordan`, `ThreeJSymbol`, selection rules.
+Validation (toolkit): `wolframscript -file scripts/clebsch_gordan_table.wls --j1=1 --j2=1 --J=2` emits nonzero couplings. References: `ClebschGordan`, `ThreeJSymbol`, selection rules.
 
 ---
 
@@ -334,7 +334,7 @@ C = D[U, β] β^2;
 Print @ ExportString[<|"beta"->β,"Z"->N[Z,15],"U"->N[U,15],"C"->N[C,15]|>, "JSON"];
 ```
 
-Validation: pipe `qho_energies.json` from section 6.3.1 for a toy check.
+Validation (toolkit): `wolframscript -file scripts/partition_fn.wls --beta=1 --in=qho_energies.json` returns Z, U, C in JSON.
 
 ---
 
@@ -383,7 +383,7 @@ id = TensorReduce[
 Print[id // InputForm];  (* equals cross product in index form *)
 ```
 
-Validation: interpret the output as `a × b` expressed via epsilon-ijk. References: `LeviCivitaTensor`, tensor ops.
+Validation (toolkit): `wolframscript -file scripts/levi_civita_check.wls` prints the cross product components as polynomials in ax[i], bx[i]. References: `LeviCivitaTensor`.
 
 #### 6.6.2 Full GR Stacks
 
@@ -413,7 +413,7 @@ Do[
 Print["wrote eigs.json and first modes as images"];
 ```
 
-Validation: eigenvalues increase and mode shapes look sensible. References: `NDEigensystem`.
+Validation (toolkit): `wolframscript -file scripts/billiard_eigs.wls` writes eigenvalues and a few modes (requires FEM-enabled license). References: `NDEigensystem`.
 
 ---
 
@@ -501,7 +501,7 @@ physics-cli/
   Makefile
 ```
 
-`Makefile` sketch:
+`Makefile` sketch (also provided in repo):
 
 ```make
 all: smoke
