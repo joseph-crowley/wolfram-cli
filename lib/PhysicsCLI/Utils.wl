@@ -61,7 +61,7 @@ RealVectorStringQ[_] := False;
 normalizeSpec[spec_Association] :=
  AssociationMap[
    Function[key,
-    Merge[{<|"Type" -> "String", "Default" -> Missing["NotProvided"], "Required" -> False|>, spec[key]},
+    Merge[{spec[key], <|"Type" -> "String", "Default" -> Missing["NotProvided"], "Required" -> False|>},
      First
     ]
    ],

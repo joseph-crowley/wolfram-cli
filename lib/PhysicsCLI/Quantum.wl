@@ -42,7 +42,6 @@ QHOEigenvalues[config_Association] :=
     |>,
     "TimingSeconds" -> eigenData["Seconds"],
     "Energies" -> N[vals, 12],
-    "FirstModeSample" -> Quiet@Check[Table[{x, funcs[[1]][x]}, {x, -halfSpan, halfSpan, (2 halfSpan)/100}], {}],
     "SuggestedOutputFile" -> outfile
   |>;
   payload
