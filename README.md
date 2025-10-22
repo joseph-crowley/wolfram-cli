@@ -24,6 +24,16 @@ PhysicsCLI is a composable Wolfram Language toolkit for graduate level physics w
    wolframscript -file physics_cli.wls --task=fourier-gaussian --mu=0 --sigma=1 --params='[-1,1]' --t=0
    ```
 
+Transverse-Field Zeroes (Electrodynamics)
+
+- Purpose: complete WL workflow that constructs E and B from a complex seed, verifies Maxwell, and characterizes transverse zero loci in the large-g regime.
+- Run:
+  - export PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH"
+  - wolframscript -file problems/transverse-field-zeroes/solve.wls
+- Outputs:
+  - problems/transverse-field-zeroes/report.txt with symbolic checks and conditions.
+  - problems/transverse-field-zeroes/sketch.png showing the electric zero axis and the rotating elliptic helix of magnetic zeroes.
+
 ## Library Layout
 
 - `lib/PhysicsCLI/Utils.wl` provides hardened argument parsing, error reporting, and deterministic output helpers.
@@ -46,6 +56,7 @@ PhysicsCLI is a composable Wolfram Language toolkit for graduate level physics w
   - `helmholtz-square`: Finite-difference solution of the Helmholtz equation on the unit square (no FEM license required).  
   - `helmholtz-sweep`: Mesh-density sweep returning residual statistics for regression monitoring.  
   - `stadium-billiard`: Dirichlet eigenvalues and mode samples for the stadium billiard.
+  - `transverse-field-zeroes`: WL reference lives under problems/transverse-field-zeroes; run as above.
 - `quantum`  
   - `qho-spectrum`: Low-lying eigenvalues of the one dimensional harmonic oscillator via FEM.  
   - `clebsch-gordan`: Non-zero Clebsch-Gordan coefficients with numeric evaluation.  
@@ -89,6 +100,7 @@ All task options follow strict `--key=value` syntax. Numbers are validated again
 - Finite-difference defaults avoid FEM licensing while mesh density remains configurable to manage compute costs.
 - Local paclet caching (via `paclets/` or `FAT_TAILED_PACLET_PATH`) keeps gamma-trace tooling available without network access.
 - Smoke tests cover Fourier analytics, thermodynamics, quantum spectra, and classical integration to catch regressions rapidly.
+- For electromagnetic phasor workflows, set $Assumptions for real parameters and apply c = omega/k early. Use ComplexExpand before imposing real-equality constraints.
 
 ## Further Reading
 

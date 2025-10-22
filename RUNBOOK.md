@@ -149,6 +149,20 @@ wolframscript -file physics_cli.wls --task=helmholtz-sweep \
 ```
 Log residual trends to ensure numerical stability and detect regressions.
 
+#### Transverse-Field Zeroes
+- Goal: verify a complex scalar seed solves the wave equation, construct E and B that solve source-free Maxwell, and locate transverse zero sets in a large-g limit.
+- Location: problems/transverse-field-zeroes
+- How to run:
+  - export PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH"
+  - wolframscript -file problems/transverse-field-zeroes/solve.wls
+- Expected artifacts:
+  - report.txt with symbolic verification: wave-equation True; Ampere residuals {0,0,0}; Ez expression; zero-locus statements.
+  - sketch.png visualizing the electric zero axis and the magnetic elliptic helix.
+- Operational notes:
+  - Set $Assumptions for real variables and positive parameters; apply c = omega/k during PDE checks.
+  - Use ComplexExpand before imposing real equalities on phasor-derived expressions.
+  - Keep outputs ASCII via InputForm; avoid front-end dependencies to enable headless runs.
+
 ### 4.5 Spectral/Chaotic Systems
 ```sh
 wolframscript -file physics_cli.wls --task=stadium-billiard \
