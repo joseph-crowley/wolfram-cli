@@ -1,87 +1,90 @@
 # Wolfram CLI Helpers
 
-Lightweight notes and sanity checks for running Mathematica/Wolfram Engine tooling from the command line on macOS.
+PhysicsCLI is a composable Wolfram Language toolkit for graduate level physics workflows driven entirely from the command line. The repository packages reusable solver functions, a declarative task registry, and backwards compatible wrapper scripts so you can wire Mathematica or the Wolfram Engine into automation, CI, and Azure batch pipelines without notebooks.
 
 ## Quick Start
 
-1. Verify the binaries:
+1. Verify the Wolfram binaries:
 
    ```sh
    ls /Applications/Wolfram.app/Contents/MacOS
    /Applications/Wolfram.app/Contents/MacOS/wolframscript -version
    ```
 
-2. Add the directory to PATH (temporary example):
+2. Expose the CLI tools:
 
    ```sh
    export PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH"
    ```
 
-3. Run the supplied smoke commands:
+3. Run the PhysicsCLI smoke suite and an example task:
 
    ```sh
-   wolframscript -code 'N[Zeta[3], 50]'
-   printf 'FactorInteger[2^61 - 1]\nQuit[]\n' | WolframKernel -noprompt
-   wolframscript -code 'Export["bessel.pdf", Plot[BesselJ[0,x], {x,0,30}]]'
+   make smoke
+   wolframscript -file physics_cli.wls --task=fourier-gaussian --mu=0 --sigma=1 --params='[-1,1]' --t=0
    ```
 
-## Documentation
+## Library Layout
 
-- `RUNBOOK.md` – detailed runbook covering installation checks, scripting patterns, argument handling, exports, and troubleshooting (last verified October 14, 2025).
-- `FIELD_MANUAL.md` – PhD-level CLI-first physics workflows with end-to-end scripts, argument parsing, and package guidance.
-- `scripts/` – runnable `.wls` toolkit (Fourier transforms, oscillators, FEM problems, QHO spectra, Clebsch-Gordan tables, partition functions, Dirac traces, FEM eigenmodes, Levi-Civita identities, smoke tests).
+- `lib/PhysicsCLI/Utils.wl` provides hardened argument parsing, error reporting, and deterministic output helpers.
+- `lib/PhysicsCLI/Analysis.wl` implements analytical transforms, partition functions, and asymptotic expansions.
+- `lib/PhysicsCLI/Classical.wl` covers driven oscillators, Helmholtz solves, and stadium billiard spectra via FEM.
+- `lib/PhysicsCLI/Quantum.wl` exposes quantum harmonic oscillator spectra, Clebsch-Gordan tables, and Dirac traces.
+- `lib/PhysicsCLI/CLI.wl` unifies the task catalog and dispatch logic.
+- `physics_cli.wls` is the primary entry point for all tasks.
+- `scripts/` hosts wrapper executables that remain friendly for ad hoc usage and older automations.
 
-## Scripts
+## Core Tasks (PhysicsCLI`CLI`TaskCatalog[])
 
-- `scripts/fourier_gaussian.wls` – Fourier transform of a shifted Gaussian with configurable parameters and JSON output.
-- `scripts/damped_oscillator.wls` – forced damped oscillator with CSV export of the response.
-- `scripts/helmholtz_square.wls` – FEM solve of a Helmholtz boundary value problem on the unit square.
-- `scripts/qho_eigs.wls` – lowest harmonic oscillator eigenvalues via FEM and JSON export.
-- `scripts/clebsch_gordan_table.wls` – tabulate non-zero Clebsch-Gordan coefficients in JSON.
-- `scripts/partition_fn.wls` – canonical partition function from a supplied discrete spectrum.
-- `scripts/billiard_eigs.wls` – eigenmodes of a stadium billiard with image exports.
-- `scripts/dirac_trace.wls` – FeynCalc-powered trace of gamma matrices (bootstraps FeynCalc if needed).
-- `scripts/levi_civita_check.wls` – Levi-Civita tensor identity using `TensorReduce`.
-- `scripts/residue_demo.wls`, `scripts/asymptotic_integral.wls` – analytic one-offs for residue and asymptotic checks.
-- `scripts/smoke_tests.wls` – verification tests; target for CI and `make smoke`.
+- `analysis`  
+  - `fourier-gaussian`: Fourier transform of exp(-(x-mu)^2/(2 sigma^2)) evaluated at a target frequency.  
+  - `partition-function`: Canonical partition function and thermodynamics from a supplied spectrum.  
+  - `asymptotic-series`: Large-parameter asymptotic expansion of a cosine-Gaussian integral.
+- `classical`  
+  - `damped-oscillator`: Driven damped oscillator trajectory sampling with optional CSV export hints.  
+  - `helmholtz-square`: Finite element solution of the Helmholtz equation on the unit square.  
+  - `stadium-billiard`: Dirichlet eigenvalues and mode samples for the stadium billiard.
+- `quantum`  
+  - `qho-spectrum`: Low-lying eigenvalues of the one dimensional harmonic oscillator via FEM.  
+  - `clebsch-gordan`: Non-zero Clebsch-Gordan coefficients with numeric evaluation.  
+  - `dirac-trace`: FeynCalc-backed Dirac gamma traces with graceful fallback if the paclet is absent.
 
-## Usage Cheatsheet
+Inspect available metadata:
 
-- Flags: Every script accepts long `--key=value` flags (no spaces). Defaults are sensible; run with no flags to use defaults.
-- JSON vs text: Scripts emitting symbolic results return JSON with those expressions as InputForm strings in the `transform` field; numeric arrays (energies, coefficients, etc.) are emitted as proper JSON numbers.
-- Examples:
-  - Fourier (JSON to stdout):
-    `wolframscript -file scripts/fourier_gaussian.wls --mu=0 --sigma=1 --t=0 | jq -r .transform`
-  - Damped oscillator (CSV file):
-    `wolframscript -file scripts/damped_oscillator.wls --gamma=0.05 --omega0=1 --F=1 --Omega=1 --tmax=10 --out=x.csv`
-  - QHO eigenvalues (JSON file):
-    `wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho_energies.json`
-  - Partition function from QHO energies:
-    `wolframscript -file scripts/partition_fn.wls --beta=1.0 --in=qho_energies.json`
-  - Clebsch–Gordan table:
-    `wolframscript -file scripts/clebsch_gordan_table.wls --j1=1 --j2=1 --J=2 | jq .`
-  - Levi-Civita cross product components:
-    `wolframscript -file scripts/levi_civita_check.wls`
+```wolfram
+Get["lib/PhysicsCLI/CLI.wl"];
+PhysicsCLI`CLI`TaskCatalog[]
+```
+
+## CLI Usage Patterns
+
+- Invoke the unified driver:  
+  `wolframscript -file physics_cli.wls --task=qho-spectrum --n=8 --L=8 --m=1 --omega=1 --output=json`
+- Run individual wrappers (compatible with older pipelines):  
+  `wolframscript -file scripts/qho_eigs.wls --n=8 --L=8 --m=1 --omega=1 --out=qho.json`
+- Pipe JSON into downstream tools:  
+  `wolframscript -file physics_cli.wls --task=partition-function --beta=0.5 --spectrum='[0.5,1.5,2.5]' | jq .`
+- Export high throughput trajectories:  
+  `wolframscript -file scripts/damped_oscillator.wls --gamma=0.05 --omega0=1 --force=1 --drive=0.8 --tmax=100 --samples=4001 --out=response.csv`
+
+All task options follow strict `--key=value` syntax. Numbers are validated against a restricted grammar to resist accidental `ToExpression` evaluation. Vector inputs are encoded as JSON arrays (for example `[-1,1]`).
 
 ## Make Targets
 
-- `make smoke` – runs `scripts/smoke_tests.wls` and propagates exit code.
-- `make qho` – computes QHO energies with default flags (see `Makefile`).
-- `make helmholtz`, `make billiards` – FEM examples; may require FEM-enabled license.
+- `make smoke` exercises the PhysicsCLI smoke suite.
+- `make qho` computes default harmonic oscillator energies and writes `qho_energies.json`.
+- `make helmholtz` exports a JSON summary of the Helmholtz solution.
+- `make billiards` produces `stadium_eigs.json` with the default eigen spectrum.
+- `make fourier`, `make partition`, `make physics` demonstrate common PhysicsCLI invocations.
 
-## Conventions and Caveats
+## Resilience Principles
 
-- PATH: `export PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH"` to use `wolframscript` without absolute paths.
-- Protected names: avoid `N`, `C`, etc.; scripts use ASCII flag names like `--n`, `--omega`.
-- Symbolic JSON: symbolic expressions are stringified via `InputForm` to ensure strict JSON; parse with downstream tools as strings if needed.
-- FEM license: some FEM-heavy scripts (`helmholtz_square.wls`, `billiard_eigs.wls`) require FEM functionality; if you encounter a license error, skip these or run on a licensed install.
+- ASCII only outputs keep logs parsable across remote shells.
+- Every task returns machine readable Associations so you can compose results across simulation stages without relying on notebooks.
+- FEM routines guard against license drift; mesh density is configurable to manage cost on Azure burst nodes.
+- Smoke tests cover Fourier analytics, thermodynamics, quantum spectra, and classical integration to catch regressions rapidly.
 
-## Conventions
+## Further Reading
 
-- Commands assume Mathematica is installed at `/Applications/Wolfram.app`.
-- For shebang scripts, ensure `wolframscript` is on PATH or prefix invocations with the PATH override shown above.
-
-## Next Steps
-
-- Consider adding a `Makefile` or small test harness to automate the sanity checks.
-- Share the runbook with teammates to keep CLI usage consistent across machines.
+- `RUNBOOK.md` documents installation, kernel discovery, and operational checklists.
+- `FIELD_MANUAL.md` surveys graduate level workflows that combine these CLI tasks into end-to-end pipelines.

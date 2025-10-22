@@ -2,6 +2,23 @@
 
 Last verified: 14 Oct 2025 on macOS with Mathematica installed at `/Applications/Wolfram.app`. The repository includes a runnable `scripts/` toolkit implementing the examples below with consistent `--key=value` flags and machine-readable outputs.
 
+## PhysicsCLI Modules
+
+- `lib/PhysicsCLI/Analysis.wl` collects reusable analytical utilities.  
+- `lib/PhysicsCLI/Classical.wl` provides ODE and FEM solvers tuned for classical dynamics.  
+- `lib/PhysicsCLI/Quantum.wl` wraps quantum spectra, angular momentum algebra, and Dirac traces.  
+- `lib/PhysicsCLI/Utils.wl` offers hardened argument parsing that avoids free-form `ToExpression`.  
+- `lib/PhysicsCLI/CLI.wl` registers the task catalog consumed by `physics_cli.wls` and all wrapper scripts.
+
+Load the catalog inside Mathematica with:
+
+```wl
+Get["lib/PhysicsCLI/CLI.wl"];
+PhysicsCLI`CLI`TaskCatalog[]
+```
+
+Each task returns an Association, so you can compose results across graduate level workflows without leaving the CLI.
+
 ## 0. Why CLI Wolfram for Physics
 
 - reproducibility: scripts live in source control and run on CI without a GUI.
@@ -68,7 +85,7 @@ wolframscript -code 'Export["bessel.pdf", Plot[BesselJ[0,x], {x,0,30}]]'
 
   ```wl
   SeedRandom[1234];
-  $Assumptions = Element[{m, ω}, Reals] && m>0 && ω>0;
+  $Assumptions = Element[{m, omega}, Reals] && m>0 && omega>0;
   ```
 
 - output discipline: for downstream scripts use `ExportString[value,"JSON"]` or `//InputForm`.
@@ -137,7 +154,7 @@ Each script is a complete, runnable `.wls`. For every script:
 
 ### 6.1 Mathematical Methods for Physicists
 
-#### 6.1.1 Fourier Transform Sanity – Gaussian
+#### 6.1.1 Fourier Transform Sanity - Gaussian
 
 ```wl
 #!/usr/bin/env wolframscript
@@ -145,23 +162,23 @@ Each script is a complete, runnable `.wls`. For every script:
 Needs["Wolfram`CommandLineParser`"];
 parse = CommandLineParser[
   <|
-    "μ" -> <|"Type"->"Real", "Default"->0.|>,
-    "σ" -> <|"Type"->"Real", "Default"->1.|>,
+    "mu" -> <|"Type"->"Real", "Default"->0.|>,
+    "sigma" -> <|"Type"->"Real", "Default"->1.|>,
     "params" -> <|"Type"->"String", "Default"->"{-1,1}"|>,   (* physics-friendly default *)
     "t" -> <|"Type"->"Real", "Default"->0.|>,
     "json" -> <|"Type"->"Boolean", "Default"->True|>
   |>,
-  "Help"->"Compute FT of exp(-(x-μ)^2/(2σ^2)) at frequency t with FourierParameters."
+  "Help"->"Compute FT of exp(-(x-mu)^2/(2sigma^2)) at frequency t with FourierParameters."
 ];
 args = parse[$ScriptCommandLine];
-{μ, σ, params, t, json} = args /@ {"μ","σ","params","t","json"};
+{mu, sigma, params, t, json} = args /@ {"mu","sigma","params","t","json"};
 fp = ToExpression[params];
 
-expr[x_] := Exp[-(x-μ)^2/(2 σ^2)];
-ft = Assuming[σ>0, FourierTransform[expr[x], x, t, FourierParameters->fp]];
-val = Assuming[σ>0, ft // Simplify];
+expr[x_] := Exp[-(x-mu)^2/(2 sigma^2)];
+ft = Assuming[sigma>0, FourierTransform[expr[x], x, t, FourierParameters->fp]];
+val = Assuming[sigma>0, ft // Simplify];
 
-out = <|"μ"->μ, "σ"->σ, "t"->t, "FourierParameters"->fp, "FT"->val|>;
+out = <|"mu"->mu, "sigma"->sigma, "t"->t, "FourierParameters"->fp, "FT"->val|>;
 If[TrueQ[json],
   Print @ ExportString[out, "JSON"],
   Print[out // InputForm]
@@ -170,7 +187,7 @@ If[TrueQ[json],
 
 Validation (toolkit): `wolframscript -file scripts/fourier_gaussian.wls --mu=0 --sigma=1 --t=0 | jq -r .transform` emits an InputForm string inside JSON. References: transform machinery and parameters.
 
-#### 6.1.2 Complex Analysis – Residue Extraction
+#### 6.1.2 Complex Analysis - Residue Extraction
 
 ```wl
 #!/usr/bin/env wolframscript
@@ -183,14 +200,14 @@ Print["Residue at z0 = ", z0 // InputForm, " is ", res // InputForm];
 
 Validation (toolkit): `wolframscript -file scripts/residue_demo.wls` prints `Residue at z0=I: 1`. Reference: residue.
 
-#### 6.1.3 Asymptotics – Stationary Phase Sketch
+#### 6.1.3 Asymptotics - Stationary Phase Sketch
 
 ```wl
 #!/usr/bin/env wolframscript
-(* asymptotic_integral.wls: illustrate AsymptoticIntegrate for large λ *)
-$Assumptions = λ>0 && a>0;
-expr = Cos[λ x^2] Exp[-a x^2];
-asym = AsymptoticIntegrate[expr, {x,-Infinity,Infinity}, λ -> Infinity, SeriesTermGoal->2];
+(* asymptotic_integral.wls: illustrate AsymptoticIntegrate for large lambda *)
+$Assumptions = lambda>0 && a>0;
+expr = Cos[lambda x^2] Exp[-a x^2];
+asym = AsymptoticIntegrate[expr, {x,-Infinity,Infinity}, lambda -> Infinity, SeriesTermGoal->2];
 Print[asym // InputForm];
 ```
 
@@ -200,7 +217,7 @@ Validation (toolkit): `wolframscript -file scripts/asymptotic_integral.wls` prin
 
 ### 6.2 Classical Mechanics and EM
 
-#### 6.2.1 ODE Flow – Damped Oscillator Response
+#### 6.2.1 ODE Flow - Damped Oscillator Response
 
 ```wl
 #!/usr/bin/env wolframscript
@@ -208,18 +225,18 @@ Validation (toolkit): `wolframscript -file scripts/asymptotic_integral.wls` prin
 Needs["Wolfram`CommandLineParser`"];
 opts = CommandLineParser[
   <|
-    "γ"-><|"Type"->"Real","Default"->0.1|>, "ω0"-><|"Type"->"Real","Default"->1.|>,
-    "F"-><|"Type"->"Real","Default"->1.|>,  "Ω"-><|"Type"->"Real","Default"->1.|>,
+    "gamma"-><|"Type"->"Real","Default"->0.1|>, "omega0"-><|"Type"->"Real","Default"->1.|>,
+    "F"-><|"Type"->"Real","Default"->1.|>,  "Omega"-><|"Type"->"Real","Default"->1.|>,
     "tmax"-><|"Type"->"Real","Default"->50.|>, "out"-><|"Type"->"String","Default"->"x.csv"|>
   |>,
-  "Help"->"Solve x''+2γ x'+ω0^2 x = F cos(Ω t) with x(0)=0, x'(0)=0."
+  "Help"->"Solve x''+2gamma x'+omega0^2 x = F cos(Omega t) with x(0)=0, x'(0)=0."
 ];
 a = opts[$ScriptCommandLine];
-{γ, ω0, F0, Ω, tmax, out} = a /@ {"γ","ω0","F","Ω","tmax","out"};
+{gamma, omega0, F0, Omega, tmax, out} = a /@ {"gamma","omega0","F","Omega","tmax","out"};
 
 x = x[t];
 sol = NDSolveValue[
-  {x'' + 2 γ x' + ω0^2 x == F0 Cos[Ω t], x[0]==0, x'[0]==0},
+  {x'' + 2 gamma x' + omega0^2 x == F0 Cos[Omega t], x[0]==0, x'[0]==0},
   x, {t,0,tmax}
 ];
 
@@ -230,15 +247,15 @@ Print["wrote ", out];
 
 Validation (toolkit): `wolframscript -file scripts/damped_oscillator.wls --gamma=0.1 --omega0=1 --F=1 --Omega=1 --tmax=50 --out=resp.csv` writes `resp.csv`. Reference: `NDSolveValue`.
 
-#### 6.2.2 Helmholtz on a Square – FEM PDE
+#### 6.2.2 Helmholtz on a Square - FEM PDE
 
 ```wl
 #!/usr/bin/env wolframscript
 (* helmholtz_square.wls: 2d Helmholtz with Dirichlet boundary on unit square *)
 Needs["NDSolve`FEM`"];
-Ω = ImplicitRegion[0 <= x <= 1 && 0 <= y <= 1, {x,y}];
-mesh = ToElementMesh[Ω, MaxCellMeasure->1/300];
-ω = 25.; c = 1.; k = ω/c;
+Omega = ImplicitRegion[0 <= x <= 1 && 0 <= y <= 1, {x,y}];
+mesh = ToElementMesh[Omega, MaxCellMeasure->1/300];
+omega = 25.; c = 1.; k = omega/c;
 
 u = NDSolveValue[
   {
@@ -271,27 +288,27 @@ Needs["Wolfram`CommandLineParser`"];
 
 p = CommandLineParser[
   <|"N"-><|"Type"->"Integer","Default"->6|>, "L"-><|"Type"->"Real","Default"->8.|>,
-    "m"-><|"Type"->"Real","Default"->1.|>, "ω"-><|"Type"->"Real","Default"->1.|>|>
+    "m"-><|"Type"->"Real","Default"->1.|>, "omega"-><|"Type"->"Real","Default"->1.|>|>
 ];
-a = p[$ScriptCommandLine]; {N, L, m, ω} = a /@ {"N","L","m","ω"};
+a = p[$ScriptCommandLine]; {N, L, m, omega} = a /@ {"N","L","m","omega"};
 
-Ω = ImplicitRegion[-L <= x <= L, {x}];
-mesh = ToElementMesh[Ω, MaxCellMeasure->L/500.];
-V[x_] := 0.5 m ω^2 x^2;
+Omega = ImplicitRegion[-L <= x <= L, {x}];
+mesh = ToElementMesh[Omega, MaxCellMeasure->L/500.];
+V[x_] := 0.5 m omega^2 x^2;
 
 {vals, funs} = NDEigensystem[
-  {-1/(2 m) D[ψ[x], {x,2}] + V[x] ψ[x], DirichletCondition[ψ[x]==0, x==-L || x==L]},
-  ψ[x], {x} ∈ mesh, N, Method->{"Eigensystem"->{"Arnoldi","MaxIterations"->10000}}
+  {-1/(2 m) D[psi[x], {x,2}] + V[x] psi[x], DirichletCondition[psi[x]==0, x==-L || x==L]},
+  psi[x], {x}  element  mesh, N, Method->{"Eigensystem"->{"Arnoldi","MaxIterations"->10000}}
 ];
 
 energies = N[vals, 10];
 Export["qho_energies.json", energies, "JSON"];
-Print["E[0..", N-1, "] ≈ ", Take[energies, UpTo[6]] // InputForm];
+Print["E[0..", N-1, "] approx ", Take[energies, UpTo[6]] // InputForm];
 ```
 
-Validation (toolkit): `wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho_energies.json` then `jq . qho_energies.json`. Compare `E_n ~ ω (n + 1/2)` for `m=ω=1`, `L` large enough. Reference: `NDEigensystem`.
+Validation (toolkit): `wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho_energies.json` then `jq . qho_energies.json`. Compare `E_n ~ omega (n + 1/2)` for `m=omega=1`, `L` large enough. Reference: `NDEigensystem`.
 
-#### 6.3.2 Angular Momentum Algebra – Clebsch-Gordan
+#### 6.3.2 Angular Momentum Algebra - Clebsch-Gordan
 
 ```wl
 #!/usr/bin/env wolframscript
@@ -321,17 +338,17 @@ Validation (toolkit): `wolframscript -file scripts/clebsch_gordan_table.wls --j1
 
 ```wl
 #!/usr/bin/env wolframscript
-(* partition_fn.wls: Z(β)=∑ e^{-β E_n} from a user-supplied spectrum file *)
+(* partition_fn.wls: Z(beta)=sum e^{-beta E_n} from a user-supplied spectrum file *)
 Needs["Wolfram`CommandLineParser`"];
 p = CommandLineParser[<|"beta"-><|"Type"->"Real","Default"->1.|>, "in"-><|"Type"->"String","Default"->"qho_energies.json"|>|>];
-a = p[$ScriptCommandLine]; {β, infile} = a /@ {"beta","in"};
+a = p[$ScriptCommandLine]; {beta, infile} = a /@ {"beta","in"};
 
 energies = Import[infile, "JSON"] /. List -> List;
-Z = Total[Exp[-β energies]];
-U = -D[Log[Z], β];
-C = D[U, β] β^2;
+Z = Total[Exp[-beta energies]];
+U = -D[Log[Z], beta];
+C = D[U, beta] beta^2;
 
-Print @ ExportString[<|"beta"->β,"Z"->N[Z,15],"U"->N[U,15],"C"->N[C,15]|>, "JSON"];
+Print @ ExportString[<|"beta"->beta,"Z"->N[Z,15],"U"->N[U,15],"C"->N[C,15]|>, "JSON"];
 ```
 
 Validation (toolkit): `wolframscript -file scripts/partition_fn.wls --beta=1 --in=qho_energies.json` returns Z, U, C in JSON.
@@ -354,15 +371,15 @@ If[InstallIfMissing["FeynCalc", fcInstall] === $Failed, Print["failed to install
 
 Needs["FeynCalc`"];
 expr = DiracTrace[GA[\[Mu]].GA[\[Nu]]];
-res = DiracSimplify[expr];  (* gives 4 g^{μν} in D=4 *)
-Print["trace gamma^μ gamma^ν -> ", res // InputForm];
+res = DiracSimplify[expr];  (* gives 4 g^{munu} in D=4 *)
+Print["trace gamma^mu gamma^nu -> ", res // InputForm];
 ```
 
-Validation: `wolframscript -file dirac_trace.wls` should print a result proportional to `MetricTensor[μ, ν]` with the expected dimension factor; consult `FeynCalc` docs if using D dimensions. References: FeynCalc docs and install method.
+Validation: `wolframscript -file dirac_trace.wls` should print a result proportional to `MetricTensor[mu, nu]` with the expected dimension factor; consult `FeynCalc` docs if using D dimensions. References: FeynCalc docs and install method.
 
 > Diagram generation: use FeynArts to generate topologies, amplitudes, and model insertions, then simplify with FeynCalc; FormCalc exports numerical code. See package manuals.
 
-#### 6.5.2 One-Loop Scalar Integrals – Package-X
+#### 6.5.2 One-Loop Scalar Integrals - Package-X
 
 For analytic one-loop integrals with dimensional regularization, use Package-X (separate install and external prerequisites may apply). Consult the tutorial slides for the operator set and syntax.
 
@@ -387,11 +404,11 @@ Validation (toolkit): `wolframscript -file scripts/levi_civita_check.wls` prints
 
 #### 6.6.2 Full GR Stacks
 
-For curvature, spin connections, and tetrads, prefer xAct’s `xTensor` and friends; they bring index types, symmetries, and kernels tailored for relativity. Documentation and references are extensive.
+For curvature, spin connections, and tetrads, prefer xAct's `xTensor` and friends; they bring index types, symmetries, and kernels tailored for relativity. Documentation and references are extensive.
 
 ---
 
-### 6.7 PDE Eigenmodes – NDEigensystem for Waveguides and Quantum Billiards
+### 6.7 PDE Eigenmodes - NDEigensystem for Waveguides and Quantum Billiards
 
 ```wl
 #!/usr/bin/env wolframscript
@@ -402,7 +419,7 @@ a = p[$ScriptCommandLine]; {m,h} = a /@ {"m","h"};
 
 r = RegionUnion[Disk[{-.5,0}, .5], Rectangle[{-0.5, -0.5}, {0.5, 0.5}], Disk[{.5,0}, .5]];
 mesh = ToElementMesh[r, MaxCellMeasure->h];
-{vals, funs} = NDEigensystem[{-(Laplacian[u[x,y],{x,y}]), DirichletCondition[u[x,y]==0, True]}, u[x,y], {x,y} ∈ mesh, m];
+{vals, funs} = NDEigensystem[{-(Laplacian[u[x,y],{x,y}]), DirichletCondition[u[x,y]==0, True]}, u[x,y], {x,y}  element  mesh, m];
 Export["eigs.json", N[vals, 8], "JSON"];
 Do[
   Export[ToString@StringTemplate["mode``.png"][k],
@@ -454,7 +471,7 @@ Validation: `wolframscript -file smoke_tests.wls` returns exit code 0 on success
 - defensive assumptions: set `$Assumptions` and use `Assuming[...]` inside transforms and symbolic simplification to avoid branch and distributional ambiguities.
 - kernel lifecycle: for streamed sessions, always send `Quit[]` at the end when piping to the kernel to avoid zombie processes.
 - argument parsing: favor the `CommandLineParser` paclet for named flags, defaults, and help. this avoids brittle positional argument handling.
-- performance traps: do not oversubscribe cores. if you use Wolfram parallel tools and MKL simultaneously, coordinate `LaunchKernels[]` with `MKL_NUM_THREADS=1..n` to avoid `n_kernels × n_blas_threads` explosions. standard MKL guidance applies.
+- performance traps: do not oversubscribe cores. if you use Wolfram parallel tools and MKL simultaneously, coordinate `LaunchKernels[]` with `MKL_NUM_THREADS=1..n` to avoid `n_kernels x n_blas_threads` explosions. standard MKL guidance applies.
 - FEM meshing: prefer `ToElementMesh` with explicit `MaxCellMeasure`; check diagnostics if meshing fails. the FEM docs cover strategies and error messages.
 - conventions: for Fourier, always set `FourierParameters` explicitly; for angular momentum coefficients expect zeroes when triangle rules fail, and handle messages programmatically if needed.
 
@@ -510,7 +527,7 @@ smoke:
 	wolframscript -file scripts/smoke_tests.wls
 
 qho:
-	wolframscript -file scripts/qho_eigs.wls --N 8 --L 10 --m 1 --ω 1
+	wolframscript -file scripts/qho_eigs.wls --N 8 --L 10 --m 1 --omega 1
 
 helmholtz:
 	wolframscript -file scripts/helmholtz_square.wls

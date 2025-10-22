@@ -17,6 +17,12 @@ Last verified: October 14, 2025 on macOS with Mathematica installed at `/Applica
   export PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH"
   ```
 
+## PhysicsCLI Package Overview
+
+- `physics_cli.wls` is the consolidated entry point. Run `wolframscript -file physics_cli.wls --task=list` to enumerate tasks.
+- Library modules live under `lib/PhysicsCLI`. Load them in ad hoc Wolfram sessions via `Get["lib/PhysicsCLI/CLI.wl"]`.
+- Wrapper scripts under `scripts/` now defer to the shared task registry, preserving legacy ergonomics while guaranteeing consistent parsing, logging, and outputs.
+
 ## Discovering the Binaries
 
 1. Try the PATH lookup first:
@@ -92,7 +98,7 @@ printf 'FactorInteger[2^61 - 1]\nQuit[]\n' | /Applications/Wolfram.app/Contents/
 - Damped oscillator (CSV): `wolframscript -file scripts/damped_oscillator.wls --gamma=0.1 --omega0=1 --F=1 --Omega=1 --tmax=10 --out=x.csv`
 - QHO eigenvalues (JSON): `wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho_energies.json`
 - Partition function (JSON): `wolframscript -file scripts/partition_fn.wls --beta=1 --in=qho_energies.json`
-- Clebsch–Gordan (JSON): `wolframscript -file scripts/clebsch_gordan_table.wls --j1=1 --j2=1 --J=2`
+- Clebsch-Gordan (JSON): `wolframscript -file scripts/clebsch_gordan_table.wls --j1=1 --j2=1 --J=2`
 
 ## Troubleshooting Updates
 

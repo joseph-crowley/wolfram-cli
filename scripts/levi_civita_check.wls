@@ -1,5 +1,5 @@
 #!/usr/bin/env wolframscript
-(* levi_civita_check.wls: compute (a × b)_i via LeviCivitaTensor components. *)
+(* levi_civita_check.wls: compute (a cross b)_i via LeviCivitaTensor components. *)
 
 a = Array[ax, 3];
 b = Array[bx, 3];

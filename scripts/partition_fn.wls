@@ -1,56 +1,35 @@
 #!/usr/bin/env wolframscript
-(* partition_fn.wls: compute canonical partition function from supplied discrete spectrum. *)
+(* partition_fn.wls: wrapper around PhysicsCLI Analysis task with file-based spectrum input. *)
 
-parseArgs[spec_Association] :=
- Module[{args = Rest@$ScriptCommandLine, assoc, defaults, keyRaw, valRaw, parser, err},
-  err = If[ValueQ[$StandardError], $StandardError, $Output];
-  defaults = Values[spec][[All, "Default"]];
-  assoc = AssociationThread[Keys[spec], defaults];
-  Do[
-   Which[
-    StringMatchQ[arg, "--" ~~ ___ ~~ "=" ~~ ___],
-    {keyRaw, valRaw} = StringSplit[StringDrop[arg, 2], "=", 2];
-    If[KeyExistsQ[spec, keyRaw],
-     parser = Lookup[spec[keyRaw], "Parser", Identity];
-     assoc[keyRaw] = parser[valRaw],
-     WriteString[err, "Ignoring unknown option --" <> keyRaw <> "\n"]
-    ],
-    StringMatchQ[arg, "--" ~~ ___],
-    keyRaw = StringDrop[arg, 2];
-    If[KeyExistsQ[spec, keyRaw],
-     If[TrueQ[Lookup[spec[keyRaw], "Flag", False]],
-      assoc[keyRaw] = True,
-      WriteString[err, "Option --" <> keyRaw <> " requires --" <> keyRaw <> "=value form.\n"]
-     ],
-     WriteString[err, "Ignoring unknown option --" <> keyRaw <> "\n"]
-    ],
-    True,
-    WriteString[err, "Ignoring positional argument " <> ToString[arg] <> "\n"]
-   ],
-   {arg, args}
-  ];
-  assoc
- ];
+scriptDir = DirectoryName[$InputFileName];
+projectRoot = ExpandFileName@FileNameJoin[{scriptDir, ".."}];
 
-spec = <|
-   "beta" -> <|"Default" -> 1., "Parser" -> ToExpression|>,
-   "in" -> <|"Default" -> "qho_energies.json"|>
-   |>;
-
-params = parseArgs[spec];
-{β, infile} = Lookup[params, {"beta", "in"}];
-
-energies = Quiet@Check[Import[infile, "JSON"], $Failed];
-If[energies === $Failed,
-  WriteString[err, "Failed to read spectrum from " <> infile <> "\n"];
+cliPath = FileNameJoin[{projectRoot, "lib", "PhysicsCLI", "CLI.wl"}];
+If[!FileExistsQ[cliPath],
+  WriteString[$StandardError, "Missing CLI library at " <> cliPath <> "\n"];
   Exit[1];
 ];
 
-energiesList = N[Flatten[{energies}]];
-w = Exp[-β energiesList];
-Z = Total[w];
-U = Total[energiesList*w]/Z;
-Cv = β^2 (Total[energiesList^2*w]/Z - U^2);
+Get[cliPath];
+Needs["PhysicsCLI`Utils`"];
 
-payload = <|"beta" -> β, "Z" -> N[Z, 15], "U" -> N[U, 15], "C" -> N[Cv, 15]|>;
-Print @ ExportString[payload, "JSON"];
+task = PhysicsCLI`CLI`TaskCatalog()["partition-function"];
+customSpec = Join[task["Spec"], <|"in" -> <|"Type" -> "String", "Default" -> "qho_energies.json", "Description" -> "JSON spectrum file"|>|>];
+
+parsed = PhysicsCLI`Utils`ParseOptions[customSpec, Rest@$ScriptCommandLine];
+If[Length[parsed["Warnings"]] > 0, Scan[PhysicsCLI`Utils`EmitError, parsed["Warnings"]]];
+If[Length[parsed["Errors"]] > 0,
+  Scan[PhysicsCLI`Utils`EmitError, parsed["Errors"]];
+  Exit[1];
+];
+
+infile = parsed["Options"]["in"];
+energies = Quiet@Check[Import[infile, "JSON"], $Failed];
+If[energies === $Failed,
+  PhysicsCLI`Utils`EmitError["Failed to read spectrum from " <> infile];
+  Exit[1];
+];
+
+options = Association[parsed["Options"], "spectrum" -> N[Flatten[{energies}]]];
+result = task["Handler"][options];
+PhysicsCLI`Utils`EmitJSON[result];

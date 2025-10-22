@@ -1,33 +1,29 @@
 #!/usr/bin/env wolframscript
-(* helmholtz_square.wls: solve Helmholtz equation on the unit square with Dirichlet data. *)
+(* helmholtz_square.wls: wrapper around PhysicsCLI classical Helmholtz task. *)
 
-Needs["NDSolve`FEM`"];
+scriptDir = DirectoryName[$InputFileName];
+projectRoot = ExpandFileName@FileNameJoin[{scriptDir, ".."}];
 
-Ω = ImplicitRegion[0 <= x <= 1 && 0 <= y <= 1, {x, y}];
-mesh = ToElementMesh[Ω, MaxCellMeasure -> 1/300];
-ω = 25.;
-c = 1.;
-k = ω/c;
-
-u = NDSolveValue[
-  {
-    Laplacian[u[x, y], {x, y}] + k^2 u[x, y] == 0,
-    DirichletCondition[u[x, y] == Sin[Pi y], x == 0],
-    DirichletCondition[u[x, y] == 0, x == 1 || y == 0 || y == 1]
-  },
-  u, Element[mesh],
-  Method -> {"PDEDiscretization" -> {"FiniteElement", "MeshOptions" -> {"MaxCellMeasure" -> 1/300}}}
+cliPath = FileNameJoin[{projectRoot, "lib", "PhysicsCLI", "CLI.wl"}];
+If[!FileExistsQ[cliPath],
+  WriteString[$StandardError, "Missing CLI library at " <> cliPath <> "\n"];
+  Exit[1];
 ];
 
-file = "helmholtz.png";
-Export[file,
-  DensityPlot[u[x, y], {x, 0, 1}, {y, 0, 1},
-    PlotRange -> All,
-    ColorFunction -> "AvocadoColors",
-    FrameLabel -> {"x", "y"},
-    PlotLegends -> Automatic
-  ]
+Get[cliPath];
+Needs["PhysicsCLI`Utils`"];
+
+task = PhysicsCLI`CLI`TaskCatalog()["helmholtz-square"];
+parsed = PhysicsCLI`Utils`ParseOptions[task["Spec"], Rest@$ScriptCommandLine];
+If[Length[parsed["Warnings"]] > 0, Scan[PhysicsCLI`Utils`EmitError, parsed["Warnings"]]];
+If[Length[parsed["Errors"]] > 0,
+  Scan[PhysicsCLI`Utils`EmitError, parsed["Errors"]];
+  Exit[1];
 ];
 
-Print["mesh elements: ", mesh["MeshElements"] // Length // InputForm];
-Print["exported ", file];
+result = task["Handler"][parsed["Options"]];
+If[result === $Failed, Exit[1]];
+
+outfile = "helmholtz.json";
+Export[outfile, result, "JSON"];
+PhysicsCLI`Utils`EmitText["exported " <> outfile <> " with mesh elements " <> ToString[result["MeshElementCount"], InputForm]];

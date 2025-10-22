@@ -1,26 +1,27 @@
 #!/usr/bin/env wolframscript
-(* dirac_trace.wls: minimal CLI FeynCalc example computing a Dirac trace. *)
+(* dirac_trace.wls: wrapper around PhysicsCLI Dirac trace task. *)
 
-InstallIfMissing[name_String, installer_: Null] :=
-  Module[{ff = Quiet@FindFile[name <> "`"]},
-    If[ff === $Failed && installer =!= Null,
-      installer[];
-      Quiet@FindFile[name <> "`"],
-      ff
-    ]
-  ];
+scriptDir = DirectoryName[$InputFileName];
+projectRoot = ExpandFileName@FileNameJoin[{scriptDir, ".."}];
 
-fcInstaller[] := Block[{$ContextPath},
-  Import["https://www.feyncalc.org/install.m"];
-  InstallFeynCalc[];
-];
-
-If[InstallIfMissing["FeynCalc", fcInstaller] === $Failed,
-  WriteString[err, "FeynCalc is not available and automatic installation failed.\n"];
+cliPath = FileNameJoin[{projectRoot, "lib", "PhysicsCLI", "CLI.wl"}];
+If[!FileExistsQ[cliPath],
+  WriteString[$StandardError, "Missing CLI library at " <> cliPath <> "\n"];
   Exit[1];
 ];
 
-Needs["FeynCalc`"];
-expr = DiracTrace[GA[\[Mu]].GA[\[Nu]]];
-res = DiracSimplify[expr];
-Print["DiracTrace[γ^μ γ^ν] -> ", res // InputForm];
+Get[cliPath];
+Needs["PhysicsCLI`Utils`"];
+
+task = PhysicsCLI`CLI`TaskCatalog()["dirac-trace"];
+parsed = PhysicsCLI`Utils`ParseOptions[task["Spec"], Rest@$ScriptCommandLine];
+If[Length[parsed["Warnings"]] > 0, Scan[PhysicsCLI`Utils`EmitError, parsed["Warnings"]]];
+If[Length[parsed["Errors"]] > 0,
+  Scan[PhysicsCLI`Utils`EmitError, parsed["Errors"]];
+  Exit[1];
+];
+
+result = task["Handler"][parsed["Options"]];
+If[result === $Failed, Exit[1]];
+
+PhysicsCLI`Utils`EmitJSON[result];
