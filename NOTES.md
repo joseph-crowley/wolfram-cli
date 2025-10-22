@@ -22,6 +22,7 @@
 - Added offline FeynCalc paclet caching inside `PhysicsCLI` (search order: `FAT_TAILED_PACLET_PATH`, repository `paclets/` directory) so gamma-trace tasks regain full algebra without network access.
 - Implemented a finite-difference Helmholtz mesh sweep (`helmholtz-sweep` task) that reports solve timing and residual norms for regression monitoring.
 - Downloaded `paclets/fclatest.zip` (≈6 MB) to seed the offline cache for `ensureFeynCalc`.
+- Replaced `RUNBOOK.md` with a comprehensive graduate-physics operations guide covering statistical mechanics, quantum, QFT, classical/EM, spectral workflows, residual monitoring, and escalation procedures.
 
 ## References
 - https://www.wolfram.com/wolframscript/
