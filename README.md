@@ -100,6 +100,7 @@ All task options follow strict `--key=value` syntax. Numbers are validated again
 - Finite-difference defaults avoid FEM licensing while mesh density remains configurable to manage compute costs.
 - Local paclet caching (via `paclets/` or `FAT_TAILED_PACLET_PATH`) keeps gamma-trace tooling available without network access.
 - Smoke tests cover Fourier analytics, thermodynamics, quantum spectra, and classical integration to catch regressions rapidly.
+- Language policy: this repository is Wolfram Language only for problem solutions and automation; do not add Python or other non-WL sources under `problems/` or `scripts/`. Keep any exploratory code out of version control.
 - For electromagnetic phasor workflows, set $Assumptions for real parameters and apply c = omega/k early. Use ComplexExpand before imposing real-equality constraints.
 
 ## Further Reading

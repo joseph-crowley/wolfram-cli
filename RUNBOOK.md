@@ -227,6 +227,12 @@ Resource tip: run heavy tasks on Azure burst nodes only when necessary. The fini
 4. **Backups** – store cached paclets in the secure company artifact store in addition to repo inclusion.
 5. **Security** – FeynCalc archives are trusted from official site; verify checksums when downloading manually.
 
+6. **Language policy (WL-only)**
+   - Use Wolfram Language exclusively for problem solutions and automation in this repository.
+   - Do not commit Python or other non-WL sources under `problems/` or `scripts/`.
+   - If temporary Python exploration is unavoidable, keep it outside the repo or in a local scratch area and do not commit artifacts.
+   - Prefer `wolframscript` headless flows; avoid notebooks in version control for operational runs.
+
 ---
 
 ## 9. Reference Cheat Sheet

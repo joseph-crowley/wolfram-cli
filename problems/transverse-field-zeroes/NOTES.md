@@ -8,6 +8,7 @@ Objective
 
 - Solve the transverse-field zeroes problem entirely in Wolfram Language.
 - Keep artifacts and documentation confined to this directory.
+- Respect repo policy: WL-only; no Python or other non-WL sources in `problems/`.
 
 Summary of Method
 
