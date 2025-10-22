@@ -1,0 +1,31 @@
+Magnetic Dipole Radiation: Angular Momentum and Pulsar Spin-down
+
+Part (a): Angular momentum radiation rate
+
+A localized, time-dependent magnetic dipole radiates through far-zone fields that fall as one over distance and induction fields that fall as the inverse square of distance. The net torque crossing a large sphere follows from integrating the Maxwell stress tensor. After the standard angular averages on the unit sphere, the only surviving vector structure is the cross product of the first and second time derivatives of the dipole moment evaluated at the retarded time. The sign is such that the radiation carries away angular momentum and the source loses the same amount.
+
+Part (b): Pulsar with misaligned frozen-in dipole
+
+Model the star as a rigid rotor with angular speed omega and a fixed magnetic moment magnitude m0 at a constant misalignment angle alpha from the rotation axis z. The moment precesses uniformly about z. In this model the axial component of the angular momentum loss rate is a constant in time, proportional to the square of the transverse moment and the cube of the angular speed, directed opposite to the rotation axis for positive omega. The radiated power is also constant and proportional to the square of the transverse moment and the fourth power of the angular speed. Their ratio equals the inverse angular speed, with the same negative sign.
+
+Demonstration (one-rotation time averages)
+- period: 0.100 s
+- omega:  62.832 rad s^-1
+- alpha:  30 deg
+- m0:              30
+1.00 x 10 A m^2
+
+Computed time averages
+- <dLz/dt>:            32
+-1.534 x 10 N m s (sign: negative z)
+- <dU/dt>:             33
+-9.641 x 10 W
+- ratio <dLz/dt>/<dU/dt>: 0.016 s
+
+Interpretation
+The equality of the ratio with the inverse angular speed expresses the usual power equals torque times angular speed relation. The constant misalignment produces time-independent axial torque and power in this idealized model. Real pulsars exhibit additional effects such as plasma winds and multipole structure, but the scaling and sign remain robust.
+
+References
+https://link.aps.org/doi/10.1103/PhysRev.56.72
+https://en.wikipedia.org/wiki/Magnetic_dipole_radiation
+https://www.feynmanlectures.caltech.edu/II_28.html
