@@ -1,0 +1,5 @@
+# Volatile files for this problem
+*.pdf
+artifacts/
+*.nb
+.DS_Store

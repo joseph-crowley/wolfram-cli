@@ -1,0 +1,27 @@
+Transverse-Field Zeroes Report
+
+(a) Wave equation check with c = omega/k: True
+
+(b) Ez from Gauss law (up to z-constant):
+I*E^(I*(-(omega*t) + k*z))*(g - Cos[delta] + 2*k*x*Sin[delta])
+
+    B field components from Faraday:
+{((-I)*E^(I*(-(omega*t) + k*z))*k*(g*k*x + I*k*y*Cos[delta] + (1 + k^2*x^2 + I*k*z)*Sin[delta]))/omega, (E^(I*(-(omega*t) + k*z))*k*(g*k*x + I*k*y*Cos[delta] + (-1 + k^2*x^2 + I*k*z)*Sin[delta]))/omega, (E^(I*(-(omega*t) + k*z))*k*(g - Cos[delta] + 2*k*x*Sin[delta]))/omega}
+
+    Ampere residuals with dispersion: {0, 0, 0}
+
+(c) g >> 1 electric zero line conditions: x == 0 and y' == 0.
+
+    y' == 0 implies y == -z Tan[delta] in the x == 0 plane.
+
+(d) Magnetic transverse zeroes (approx):
+    In polar coords gx = r cos th, y' = r sin th,
+    Requiring Re(Bx) == Re(By) == 0 yields
+    r = Sin[delta]/k and th = -(k z - omega t).
+
+    This describes an elliptic helix around the z' axis,
+    with ellipse axes scaled by 1/g along x and 1 along y'.
+
+Artifacts:
+  /Users/joe/code/wolfram-cli/problems/transverse-field-zeroes/sketch.png
+
