@@ -66,6 +66,57 @@ Notes
   relationship between y prime and z prime explicit without rotating the full
   coordinate system.
 
+Learnings: Wolfram Language for graduate physics
+
+- Symbolic discipline
+  - Keep parameters as named symbols and set global assumptions for reality
+    and positivity. Avoid generating unnamed Unique symbols, which produce
+    unstable logs.
+  - Apply the dispersion relation c equals omega divided by k early when
+    checking partial differential equations. This collapses many terms and
+    exposes true zeros.
+  - Write outputs with InputForm to preserve ASCII and make diffs stable.
+
+- Maxwell workflow patterns
+  - Build the electric field from a transverse seed and deduce the longitudinal
+    component by integrating the negative transverse divergence with respect to
+    the propagation coordinate. Track the integration constant explicitly and
+    select the minimal longitudinal field; verify by substituting back into the
+    remaining Maxwell equations.
+  - Use the phasor convention with time factor exp i of k z minus omega t.
+    Under this convention, the magnetic field equals one over i omega times the
+    curl of the electric field, and Ampere reduces to the curl of B equals one
+    over c squared times the time derivative of E. Consistent signs are
+    essential; one mismatch infects all derived relations.
+
+- Real fields and zero sets
+  - Resolve real and imaginary parts with ComplexExpand after declaring real
+    parameters. Do not ask Solve over the real domain while complex units are
+    still present. First expand to real trigonometric form, then enforce real
+    equalities.
+  - For loci problems, move to coordinates aligned with the physics. The linear
+    change to y prime and the scaled polar mapping in the transverse plane
+    reduce the zero conditions to a constant radius and a phase relation tied to
+    the traveling wave. The helix appears as an immediate corollary, with
+    ellipticity set by the x scaling of one over g.
+
+- Headless robustness
+  - Avoid any dependence on a front end. Use Export for plots and write text
+    reports with OpenWrite and WriteString. This keeps wolframscript runnable in
+    CI and on Azure batch nodes.
+
+- Reproducibility and cost hygiene
+  - Emit deterministic ASCII artifacts, avoid notebooks for operational runs,
+    and place all problem files in a confined directory. This minimizes merge
+    noise and storage while remaining audit ready.
+
+- Edge cases and fat tails
+  - The helix radius collapses when the parameter delta tends to values where
+    its sine vanishes; note this degeneracy explicitly. The large g asymptotic
+    approximation is controlled but should be validated if g is not truly
+    large. Prefer exact symbolic verification of identities to protect against
+    rare numerical pathologies.
+
 Date: 2025-10-22 16:15:00 PDT
 Command: wolframscript -file problems/transverse-field-zeroes/solve.wls
 Outcome: success; report.txt and sketch.png written
