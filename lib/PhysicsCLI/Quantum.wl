@@ -74,24 +74,32 @@ ensureFeynCalc[] :=
  Module[{file},
   file = Quiet@FindFile["FeynCalc`"];
   If[file === $Failed,
-   EmitError["FeynCalc is not installed. See https://feyncalc.github.io/ for setup guidance."];
-   Return[$Failed];
-  ];
-  Needs["FeynCalc`"];
-  True
+   False,
+   Needs["FeynCalc`"];
+   True
+  ]
  ];
 
 DiracTraceGammaPair[config_Association] :=
  Module[{muLabel = config["muLabel"], nuLabel = config["nuLabel"], ok, expr, reduced},
   ok = ensureFeynCalc[];
-  If[ok === $Failed, Return[$Failed]];
-  expr = DiracTrace[GA[Symbol[muLabel]].GA[Symbol[nuLabel]]];
-  reduced = DiracSimplify[expr];
-  <|
-   "Problem" -> "Dirac gamma trace",
-   "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
-   "Result" -> ToString[reduced, InputForm]
-  |>
+
+  If[TrueQ[ok],
+   expr = DiracTrace[GA[Symbol[muLabel]].GA[Symbol[nuLabel]]];
+   reduced = DiracSimplify[expr];
+   <|
+    "Problem" -> "Dirac gamma trace",
+    "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
+    "Result" -> ToString[reduced, InputForm],
+    "Method" -> "FeynCalc"
+   |>,
+   <|
+    "Problem" -> "Dirac gamma trace",
+    "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
+    "Result" -> "4 * g(" <> muLabel <> "," <> nuLabel <> ")",
+    "Method" -> "Analytic Clifford trace (FeynCalc unavailable)"
+   |>
+  ]
  ];
 
 QuantumTaskSpecifications[] :=

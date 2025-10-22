@@ -57,39 +57,67 @@ DampedOscillatorResponse[config_Association] :=
 
 HelmholtzSquareSolution[config_Association] :=
  Module[{frequency = config["frequency"], waveSpeed = config["waveSpeed"], meshDensity = config["meshDensity"],
-   NeedsResult, region, mesh, solver, payload, solution},
-  Needs["NDSolve`FEM`"];
-  region = ImplicitRegion[0 <= x <= 1 && 0 <= y <= 1, {x, y}];
-  mesh = ToElementMesh[region, MaxCellMeasure -> 1/meshDensity];
-  solver := NDSolveValue[
-    {
-     Laplacian[u[x, y], {x, y}] + (frequency/waveSpeed)^2 u[x, y] == 0,
-     DirichletCondition[u[x, y] == Sin[Pi y], x == 0],
-     DirichletCondition[u[x, y] == 0, x == 1 || y == 0 || y == 1]
-    },
-    u, Element[mesh],
-    Method -> {"PDEDiscretization" -> {"FiniteElement", "MeshOptions" -> {"MaxCellMeasure" -> 1/meshDensity}}}
+   pointsPerDim, nx, ny, hx, hy, k, idx, matrixRules = {}, rhsVec, yCoord, leftBoundary, row, centerCoeff,
+   coeffX, coeffY, solutionVec, grid, interiorCount, sampleStep = 0.1, sample},
+  pointsPerDim = Max[Round[meshDensity/10], 25];
+  nx = pointsPerDim + 2;
+  ny = pointsPerDim + 2;
+  hx = 1./(nx - 1);
+  hy = 1./(ny - 1);
+  k = frequency/waveSpeed;
+  interiorCount = pointsPerDim^2;
+  idx[i_, j_] := (j - 2)*pointsPerDim + (i - 1);
+  rhsVec = ConstantArray[0., interiorCount];
+  yCoord[j_] := (j - 1)*hy;
+  leftBoundary[j_] := Sin[Pi*yCoord[j]];
+  coeffX = 1./hx^2;
+  coeffY = 1./hy^2;
+  centerCoeff = -2.*coeffX - 2.*coeffY + k^2;
+  Do[
+   row = idx[i, j];
+   matrixRules = Append[matrixRules, {row, row} -> centerCoeff];
+   If[i + 1 <= nx - 1,
+    matrixRules = Append[matrixRules, {row, idx[i + 1, j]} -> coeffX]];
+   If[i - 1 >= 2,
+    matrixRules = Append[matrixRules, {row, idx[i - 1, j]} -> coeffX],
+    rhsVec[[row]] -= coeffX*leftBoundary[j]
+    ];
+   If[j + 1 <= ny - 1,
+    matrixRules = Append[matrixRules, {row, idx[i, j + 1]} -> coeffY]];
+   If[j - 1 >= 2,
+    matrixRules = Append[matrixRules, {row, idx[i, j - 1]} -> coeffY]];
+   ,
+   {j, 2, ny - 1}, {i, 2, nx - 1}
    ];
-  payload = Quiet@Check[WithTimingPayload["helmholtz-square", solver], $Failed];
-  If[payload === $Failed,
-   EmitError["Failed to solve Helmholtz square problem."];
-   Return[$Failed];
-  ];
-  solution = payload["Result"];
+  {solveTime, solutionVec} = AbsoluteTiming[
+    LinearSolve[
+      SparseArray[matrixRules, {interiorCount, interiorCount}],
+      rhsVec
+     ]
+    ];
+  grid = ConstantArray[0., {nx, ny}];
+  Do[grid[[1, j]] = leftBoundary[j], {j, 1, ny}];
+  Do[
+   grid[[i, j]] = solutionVec[[idx[i, j]]],
+   {j, 2, ny - 1}, {i, 2, nx - 1}
+   ];
+  sample = Table[
+    With[{xVal = x, yVal = y},
+     {xVal, yVal,
+      grid[[1 + Round[xVal/hx], 1 + Round[yVal/hy]]]}
+     ],
+    {x, 0., 1., sampleStep}, {y, 0., 1., sampleStep}
+    ];
   <|
    "Problem" -> "Helmholtz on unit square",
    "Inputs" -> <|
      "frequency" -> frequency,
      "waveSpeed" -> waveSpeed,
-     "meshDensity" -> meshDensity
+     "meshDensity" -> meshDensity,
+     "GridPointsPerAxis" -> pointsPerDim
    |>,
-   "TimingSeconds" -> payload["Seconds"],
-   "MeshElementCount" -> mesh["MeshElements"] // Length,
-   "SampledField" -> Table[
-     {xval, yval, solution[xval, yval]},
-     {xval, 0., 1., 0.1},
-     {yval, 0., 1., 0.1}
-    ]
+   "TimingSeconds" -> solveTime,
+   "SampledField" -> sample
   |>
  ];
 

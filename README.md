@@ -28,7 +28,7 @@ PhysicsCLI is a composable Wolfram Language toolkit for graduate level physics w
 
 - `lib/PhysicsCLI/Utils.wl` provides hardened argument parsing, error reporting, and deterministic output helpers.
 - `lib/PhysicsCLI/Analysis.wl` implements analytical transforms, partition functions, and asymptotic expansions.
-- `lib/PhysicsCLI/Classical.wl` covers driven oscillators, Helmholtz solves, and stadium billiard spectra via FEM.
+- `lib/PhysicsCLI/Classical.wl` covers driven oscillators, a finite-difference Helmholtz solver, and stadium billiard spectra.
 - `lib/PhysicsCLI/Quantum.wl` exposes quantum harmonic oscillator spectra, Clebsch-Gordan tables, and Dirac traces.
 - `lib/PhysicsCLI/CLI.wl` unifies the task catalog and dispatch logic.
 - `physics_cli.wls` is the primary entry point for all tasks.
@@ -42,12 +42,12 @@ PhysicsCLI is a composable Wolfram Language toolkit for graduate level physics w
   - `asymptotic-series`: Large-parameter asymptotic expansion of a cosine-Gaussian integral.
 - `classical`  
   - `damped-oscillator`: Driven damped oscillator trajectory sampling with optional CSV export hints.  
-  - `helmholtz-square`: Finite element solution of the Helmholtz equation on the unit square.  
+  - `helmholtz-square`: Finite-difference solution of the Helmholtz equation on the unit square (no FEM license required).  
   - `stadium-billiard`: Dirichlet eigenvalues and mode samples for the stadium billiard.
 - `quantum`  
-  - `qho-spectrum`: Low-lying eigenvalues of the one dimensional harmonic oscillator via FEM.  
+- `qho-spectrum`: Low-lying eigenvalues of the one dimensional harmonic oscillator via FEM.  
   - `clebsch-gordan`: Non-zero Clebsch-Gordan coefficients with numeric evaluation.  
-  - `dirac-trace`: FeynCalc-backed Dirac gamma traces with graceful fallback if the paclet is absent.
+- `dirac-trace`: FeynCalc-backed Dirac gamma traces with analytic fallback if the paclet is absent.
 
 Inspect available metadata:
 
@@ -81,7 +81,7 @@ All task options follow strict `--key=value` syntax. Numbers are validated again
 
 - ASCII only outputs keep logs parsable across remote shells.
 - Every task returns machine readable Associations so you can compose results across simulation stages without relying on notebooks.
-- FEM routines guard against license drift; mesh density is configurable to manage cost on Azure burst nodes.
+- Finite-difference defaults avoid FEM licensing while mesh density remains configurable to manage compute costs.
 - Smoke tests cover Fourier analytics, thermodynamics, quantum spectra, and classical integration to catch regressions rapidly.
 
 ## Further Reading

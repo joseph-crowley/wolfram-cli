@@ -5,7 +5,7 @@ Last verified: 14 Oct 2025 on macOS with Mathematica installed at `/Applications
 ## PhysicsCLI Modules
 
 - `lib/PhysicsCLI/Analysis.wl` collects reusable analytical utilities.  
-- `lib/PhysicsCLI/Classical.wl` provides ODE and FEM solvers tuned for classical dynamics.  
+- `lib/PhysicsCLI/Classical.wl` provides ODE solvers, finite-difference Helmholtz routines, and FEM-based exemplars for classical dynamics.  
 - `lib/PhysicsCLI/Quantum.wl` wraps quantum spectra, angular momentum algebra, and Dirac traces.  
 - `lib/PhysicsCLI/Utils.wl` offers hardened argument parsing that avoids free-form `ToExpression`.  
 - `lib/PhysicsCLI/CLI.wl` registers the task catalog consumed by `physics_cli.wls` and all wrapper scripts.
@@ -247,32 +247,20 @@ Print["wrote ", out];
 
 Validation (toolkit): `wolframscript -file scripts/damped_oscillator.wls --gamma=0.1 --omega0=1 --F=1 --Omega=1 --tmax=50 --out=resp.csv` writes `resp.csv`. Reference: `NDSolveValue`.
 
-#### 6.2.2 Helmholtz on a Square - FEM PDE
+#### 6.2.2 Helmholtz on a Square - Finite-Difference PDE
 
 ```wl
 #!/usr/bin/env wolframscript
-(* helmholtz_square.wls: 2d Helmholtz with Dirichlet boundary on unit square *)
-Needs["NDSolve`FEM`"];
-Omega = ImplicitRegion[0 <= x <= 1 && 0 <= y <= 1, {x,y}];
-mesh = ToElementMesh[Omega, MaxCellMeasure->1/300];
-omega = 25.; c = 1.; k = omega/c;
-
-u = NDSolveValue[
-  {
-    Laplacian[u[x,y], {x,y}] + k^2 u[x,y] == 0,
-    DirichletCondition[u[x,y]==Sin[Pi y], x==0],
-    DirichletCondition[u[x,y]==0, x==1 || y==0 || y==1]
-  },
-  u, Element[mesh]
-];
-
-Export["helmholtz.png",
-  DensityPlot[u[x,y], {x,0,1},{y,0,1}, PlotRange->All, ColorFunction->"AvocadoColors"]
-];
-Print["mesh elements: ", mesh["MeshOrder"], " exported helmholtz.png"];
+(* helmholtz_square.wls: finite-difference Helmholtz solve on the unit square *)
+Needs["PhysicsCLI`CLI`"];
+PhysicsCLI`CLI`RunTask["helmholtz-square", <|
+  "frequency" -> 25., "waveSpeed" -> 1., "meshDensity" -> 300.
+|>]
 ```
 
-Validation (toolkit): `wolframscript -file scripts/helmholtz_square.wls` produces `helmholtz.png` (requires FEM-enabled license). References: `ImplicitRegion`, `ToElementMesh`, FEM tutorial.
+The CLI assembles a five-point Laplacian stencil on a uniform tensor-product grid, incorporates the inhomogeneous boundary condition `u(0,y)=sin(pi y)` analytically, and solves the resulting sparse linear system. The output is a JSON association containing timing, the effective grid resolution, and a coarse sample of `{x,y,u}` triplets ready for plotting.
+
+Validation (toolkit): `wolframscript -file scripts/helmholtz_square.wls --frequency=25 --waveSpeed=1 --meshDensity=300` emits a JSON summary without relying on FEM licensing.
 
 ---
 
