@@ -154,12 +154,29 @@ DiracTraceGammaPair[config_Association] :=
       metricSyms[[1]][a_, b_] :> MetricTensor[a, b],
       metricSyms[[2]][a_, b_] :> MetricTensor[a, b]
      };
-   <|
-    "Problem" -> "Dirac gamma trace",
-    "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
-    "Result" -> ToString[formatted, InputForm],
-    "Method" -> "FeynCalc"
-   |>,
+   If[FreeQ[formatted,
+     Alternatives @@ (
+       ToExpression /@ {
+         "HighEnergyPhysics`FeynCalc`DiracSimplify",
+         "HighEnergyPhysics`FeynCalc`DiracTrace",
+         "FeynCalc`DiracSimplify",
+         "FeynCalc`DiracTrace",
+         "HighEnergyPhysics`fctools`DiracSimplify",
+         "HighEnergyPhysics`fctools`DiracTrace"
+       })],
+    <|
+     "Problem" -> "Dirac gamma trace",
+     "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
+     "Result" -> ToString[formatted, InputForm],
+     "Method" -> "FeynCalc"
+    |>,
+    <|
+     "Problem" -> "Dirac gamma trace",
+     "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
+     "Result" -> "4 * g(" <> muLabel <> "," <> nuLabel <> ")",
+     "Method" -> "Analytic Clifford trace (FeynCalc unavailable)"
+    |>
+   ],
    <|
     "Problem" -> "Dirac gamma trace",
     "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
