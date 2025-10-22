@@ -71,13 +71,39 @@ ClebschGordanTable[config_Association] :=
  ];
 
 ensureFeynCalc[] :=
- Module[{file},
+ Module[{file, installFromLocal, envPath, searchRoots, pacletFile, installResult},
   file = Quiet@FindFile["FeynCalc`"];
   If[file === $Failed,
-   False,
-   Needs["FeynCalc`"];
-   True
-  ]
+   installFromLocal :=
+    Module[{},
+     envPath = Environment["FAT_TAILED_PACLET_PATH"];
+     searchRoots = DeleteMissing@Flatten@{
+        If[StringQ[envPath] && envPath =!= "", envPath, Nothing],
+        If[DirectoryQ[parentDir], FileNameJoin[{parentDir, "paclets"}], Nothing]
+      };
+     pacletFile = SelectFirst[
+        Flatten[FileNames[{"FeynCalc*.paclet"}, searchRoots, Infinity]],
+        FileExistsQ,
+        Missing["NotFound"]
+      ];
+     If[pacletFile === Missing["NotFound"], Return[$Failed]];
+     Quiet@Check[PacletInstall[pacletFile, "IgnoreVersion" -> True], $Failed]
+    ];
+   installResult = installFromLocal;
+   If[installResult === $Failed,
+    EmitError[
+     "FeynCalc paclet not found. Place the archive under paclets/ or set FAT_TAILED_PACLET_PATH."
+    ];
+    Return[False];
+   ];
+   file = Quiet@FindFile["FeynCalc`"];
+   If[file === $Failed,
+    EmitError["FeynCalc installation from local paclet failed."];
+    Return[False];
+   ];
+  ];
+  Needs["FeynCalc`"];
+  True
  ];
 
 DiracTraceGammaPair[config_Association] :=

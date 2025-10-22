@@ -262,6 +262,14 @@ The CLI assembles a five-point Laplacian stencil on a uniform tensor-product gri
 
 Validation (toolkit): `wolframscript -file scripts/helmholtz_square.wls --frequency=25 --waveSpeed=1 --meshDensity=300` emits a JSON summary without relying on FEM licensing.
 
+#### 6.2.3 Helmholtz Mesh-Density Sweep and Residuals
+
+```sh
+wolframscript -file physics_cli.wls --task=helmholtz-sweep --densities='[150,200,300,400]' --frequency=25 --waveSpeed=1
+```
+
+The sweep command reuses the finite-difference solver, aggregates solve timings, and logs the RMS and maximum residuals of the discrete Helmholtz operator for each mesh density. Track these metrics in CI (or locally in `NOTES.md`) to detect regressions in the discretization or boundary enforcement. Adjust the density list to match production tolerances.
+
 ---
 
 ### 6.3 Quantum Mechanics
@@ -347,23 +355,16 @@ Validation (toolkit): `wolframscript -file scripts/partition_fn.wls --beta=1 --i
 
 #### 6.5.1 Gamma-Matrix Traces and Contraction with FeynCalc
 
-```wl
-#!/usr/bin/env wolframscript
-(* dirac_trace.wls: minimal FeynCalc example in cli *)
-InstallIfMissing[name_String, install_:Null] := Module[{ff=FindFile[name<>"`"]},
-  If[ff===$Failed && install=!=Null, install[]; FindFile[name<>"`"], ff]
-];
+PhysicsCLI auto-installs FeynCalc whenever the paclet archive is available locally. Place `FeynCalc.paclet` under `paclets/` (or set the environment variable `FAT_TAILED_PACLET_PATH` to a directory containing the archive). Once cached, the CLI task handles installation and usage transparently:
 
-fcInstall[] := (Import["https://www.feyncalc.org/install.m"]; InstallFeynCalc[]);  (* official bootstrap *)
-If[InstallIfMissing["FeynCalc", fcInstall] === $Failed, Print["failed to install FeynCalc"]; Exit[1]];
-
-Needs["FeynCalc`"];
-expr = DiracTrace[GA[\[Mu]].GA[\[Nu]]];
-res = DiracSimplify[expr];  (* gives 4 g^{munu} in D=4 *)
-Print["trace gamma^mu gamma^nu -> ", res // InputForm];
+```sh
+wolframscript -file physics_cli.wls --task=dirac-trace --muLabel=mu --nuLabel=nu
 ```
 
-Validation: `wolframscript -file dirac_trace.wls` should print a result proportional to `MetricTensor[mu, nu]` with the expected dimension factor; consult `FeynCalc` docs if using D dimensions. References: FeynCalc docs and install method.
+- If the paclet is present, the output reports `Method -> "FeynCalc"` and returns the traditional `4 g^{μν}` trace.
+- Without the paclet, the CLI emits the analytic fallback `4 * g(mu,nu)` so automation remains unblocked while you stage the archive.
+
+> Tips: keep a copy of the latest FeynCalc paclet in the repository’s `paclets/` directory for offline environments. For higher-rank traces, extend the CLI task or import the package manually after the auto-install completes.
 
 > Diagram generation: use FeynArts to generate topologies, amplitudes, and model insertions, then simplify with FeynCalc; FormCalc exports numerical code. See package manuals.
 

@@ -24,6 +24,7 @@ Last verified: October 22, 2025 on macOS with Mathematica installed at `/Applica
 - `physics_cli.wls` – primary entry point; accepts `--task=<name>` plus task-specific flags.
 - `lib/PhysicsCLI` – modular packages providing utilities, analysis, classical, and quantum toolkits. Load interactively via `Get["lib/PhysicsCLI/CLI.wl"]`.
 - `scripts/` – thin wrappers that call into the shared task registry to preserve legacy automation (e.g., CI or Makefile targets).
+- `paclets/` – drop offline paclet archives (for example `FeynCalc.paclet`) or set the environment variable `FAT_TAILED_PACLET_PATH`.
 - `NOTES.md` – live operations log; update after each validation campaign.
 
 Enumerate the current task catalog at any time:
@@ -74,9 +75,10 @@ wolframscript -file physics_cli.wls --task=list
 | Statistical physics | `partition-function` | Canonical partition function, internal energy, heat capacity from a discrete spectrum. | Accepts JSON lists or file paths (wrapper) |
 | Quantum mechanics | `qho-spectrum` | Finite-element harmonic oscillator eigenvalues (low modes). | Writes `qho_energies.json` via wrappers |
 | Quantum angular momentum | `clebsch-gordan` | Non-zero Clebsch–Gordan coefficients tabulated as JSON. | Full numeric output |
-| Quantum field theory | `dirac-trace` | `DiracTrace[γ^μ γ^ν]`; uses FeynCalc if available, otherwise analytic result `4 g^{μν}`. | No external download required |
+| Quantum field theory | `dirac-trace` | `DiracTrace[γ^μ γ^ν]`; uses FeynCalc if available, otherwise analytic result `4 g^{μν}`. | Drop `FeynCalc.paclet` into `paclets/` for offline install |
 | Classical dynamics | `damped-oscillator` | Forced damped oscillator response sampled at fixed cadence. | Returns trajectory plus suggested CSV name |
 | Electrodynamics / waves | `helmholtz-square` | Finite-difference Helmholtz solve on the unit square with Dirichlet data. | Five-point stencil; no FEM license needed |
+| Electrodynamics / waves | `helmholtz-sweep` | Mesh-density sweep emitting residual RMS and max norms. | Feed results into regression dashboards |
 | Chaos / spectral | `stadium-billiard` | Stadium billiard eigen spectrum (still uses FEM). | Requires FEM-enabled license |
 
 ## 6. Routine Validation
@@ -98,6 +100,7 @@ wolframscript -file physics_cli.wls --task=list
    wolframscript -file physics_cli.wls --task=damped-oscillator --gamma=0.05 --omega0=1 --force=1 --drive=0.9 --tmax=40 --samples=201
    wolframscript -file physics_cli.wls --task=helmholtz-square --frequency=25 --waveSpeed=1 --meshDensity=300
    wolframscript -file physics_cli.wls --task=dirac-trace --muLabel=mu --nuLabel=nu
+   wolframscript -file physics_cli.wls --task=helmholtz-sweep --densities='[150,200,300,400]' --frequency=25 --waveSpeed=1
    ```
 
 Document outcomes in `NOTES.md` after each run.
@@ -107,7 +110,7 @@ Document outcomes in `NOTES.md` after each run.
 - **Missing `wolframscript`** – use full path or symlink into `/usr/local/bin`.
 - **JSON encoding errors** – ensure symbolic expressions are converted via `ToString[..., InputForm]` (handled automatically inside PhysicsCLI).
 - **Helmholtz licensing** – the finite-difference implementation eliminates FEM licensing requirements; adjust `meshDensity` to balance fidelity/cost.
-- **FeynCalc unavailable** – the Dirac trace task emits the analytic `4 g(μ,ν)` and records `Method -> "Analytic Clifford trace (FeynCalc unavailable)"`. Install FeynCalc locally if higher-order traces are needed.
+- **FeynCalc unavailable** – drop `FeynCalc.paclet` into `paclets/` (or point `FAT_TAILED_PACLET_PATH` to the directory containing it); PhysicsCLI auto-installs the paclet before evaluation.
 - **Long running tasks** – prefer `physics_cli.wls` to isolate runs and guarantee clean exit codes; wrap invocations in shell scripts for retries/backoff.
 
 ## 8. Operational Hygiene

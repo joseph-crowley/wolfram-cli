@@ -55,10 +55,9 @@ DampedOscillatorResponse[config_Association] :=
   |>
  ];
 
-HelmholtzSquareSolution[config_Association] :=
- Module[{frequency = config["frequency"], waveSpeed = config["waveSpeed"], meshDensity = config["meshDensity"],
-   pointsPerDim, nx, ny, hx, hy, k, idx, matrixRules = {}, rhsVec, yCoord, leftBoundary, row, centerCoeff,
-   coeffX, coeffY, solutionVec, grid, interiorCount, sampleStep = 0.1, sample},
+solveHelmholtzFiniteDifference[frequency_, waveSpeed_, meshDensity_] :=
+ Module[{pointsPerDim, nx, ny, hx, hy, k, interiorCount, idx, rhsVec, yCoord, leftBoundary, coeffX, coeffY,
+   centerCoeff, matrixRules = {}, row, solveTime, solutionVec, grid, sampleStep = 0.1, sample, residuals},
   pointsPerDim = Max[Round[meshDensity/10], 25];
   nx = pointsPerDim + 2;
   ny = pointsPerDim + 2;
@@ -109,16 +108,64 @@ HelmholtzSquareSolution[config_Association] :=
      ],
     {x, 0., 1., sampleStep}, {y, 0., 1., sampleStep}
     ];
+  residuals = Flatten@Table[
+     ((grid[[i + 1, j]] - 2 grid[[i, j]] + grid[[i - 1, j]])/hx^2 +
+       (grid[[i, j + 1]] - 2 grid[[i, j]] + grid[[i, j - 1]])/hy^2 +
+       k^2 grid[[i, j]]),
+     {i, 2, nx - 1}, {j, 2, ny - 1}
+     ];
+  <|
+   "Grid" -> grid,
+   "SampledField" -> sample,
+   "PointsPerAxis" -> pointsPerDim,
+   "SolveSeconds" -> solveTime,
+   "ResidualRMS" -> Sqrt[Mean[residuals^2]],
+  "ResidualMax" -> Max[Abs[residuals]],
+   "Residuals" -> residuals
+  |>
+ ];
+
+HelmholtzSquareSolution[config_Association] :=
+ Module[{frequency = config["frequency"], waveSpeed = config["waveSpeed"], meshDensity = config["meshDensity"],
+   result},
+  result = solveHelmholtzFiniteDifference[frequency, waveSpeed, meshDensity];
   <|
    "Problem" -> "Helmholtz on unit square",
    "Inputs" -> <|
      "frequency" -> frequency,
      "waveSpeed" -> waveSpeed,
      "meshDensity" -> meshDensity,
-     "GridPointsPerAxis" -> pointsPerDim
+     "GridPointsPerAxis" -> result["PointsPerAxis"]
    |>,
-   "TimingSeconds" -> solveTime,
-   "SampledField" -> sample
+   "TimingSeconds" -> result["SolveSeconds"],
+   "ResidualRMS" -> result["ResidualRMS"],
+   "ResidualMax" -> result["ResidualMax"],
+   "SampledField" -> result["SampledField"]
+  |>
+ ];
+
+HelmholtzSquareSweep[config_Association] :=
+ Module[{frequency = config["frequency"], waveSpeed = config["waveSpeed"], densities = config["densities"],
+   results},
+  results = Table[
+    Module[{sol = solveHelmholtzFiniteDifference[frequency, waveSpeed, density]},
+     <|
+       "meshDensity" -> density,
+       "GridPointsPerAxis" -> sol["PointsPerAxis"],
+       "SolveSeconds" -> sol["SolveSeconds"],
+       "ResidualRMS" -> sol["ResidualRMS"],
+       "ResidualMax" -> sol["ResidualMax"]
+     |>
+    ],
+    {density, densities}
+    ];
+  <|
+   "Problem" -> "Helmholtz mesh-density sweep",
+   "Inputs" -> <|
+     "frequency" -> frequency,
+     "waveSpeed" -> waveSpeed
+   |>,
+   "Results" -> results
   |>
  ];
 
@@ -193,6 +240,15 @@ ClassicalTaskSpecifications[] :=
       "meshDensity" -> <|"Type" -> "PositiveReal", "Default" -> 300., "Description" -> "Inverse cell size control"|>
     |>,
     "Handler" -> HelmholtzSquareSolution
+   |>,
+  "helmholtz-sweep" -> <|
+    "Description" -> "Evaluate Helmholtz residuals across multiple mesh densities.",
+    "Spec" -> <|
+      "frequency" -> <|"Type" -> "PositiveReal", "Default" -> 25., "Description" -> "Angular frequency"|>,
+      "waveSpeed" -> <|"Type" -> "PositiveReal", "Default" -> 1., "Description" -> "Wave propagation speed"|>,
+      "densities" -> <|"Type" -> "RealVector", "Required" -> True, "Description" -> "JSON array of mesh density targets"|>
+    |>,
+    "Handler" -> HelmholtzSquareSweep
    |>,
   "stadium-billiard" -> <|
     "Description" -> "Compute Dirichlet eigenvalues in a stadium billiard domain.",

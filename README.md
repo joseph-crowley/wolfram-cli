@@ -33,6 +33,7 @@ PhysicsCLI is a composable Wolfram Language toolkit for graduate level physics w
 - `lib/PhysicsCLI/CLI.wl` unifies the task catalog and dispatch logic.
 - `physics_cli.wls` is the primary entry point for all tasks.
 - `scripts/` hosts wrapper executables that remain friendly for ad hoc usage and older automations.
+- `paclets/` stores offline paclet archives (drop `FeynCalc.paclet` here or set `FAT_TAILED_PACLET_PATH`).
 
 ## Core Tasks (PhysicsCLI`CLI`TaskCatalog[])
 
@@ -43,11 +44,12 @@ PhysicsCLI is a composable Wolfram Language toolkit for graduate level physics w
 - `classical`  
   - `damped-oscillator`: Driven damped oscillator trajectory sampling with optional CSV export hints.  
   - `helmholtz-square`: Finite-difference solution of the Helmholtz equation on the unit square (no FEM license required).  
+  - `helmholtz-sweep`: Mesh-density sweep returning residual statistics for regression monitoring.  
   - `stadium-billiard`: Dirichlet eigenvalues and mode samples for the stadium billiard.
 - `quantum`  
-- `qho-spectrum`: Low-lying eigenvalues of the one dimensional harmonic oscillator via FEM.  
+  - `qho-spectrum`: Low-lying eigenvalues of the one dimensional harmonic oscillator via FEM.  
   - `clebsch-gordan`: Non-zero Clebsch-Gordan coefficients with numeric evaluation.  
-- `dirac-trace`: FeynCalc-backed Dirac gamma traces with analytic fallback if the paclet is absent.
+  - `dirac-trace`: FeynCalc-backed Dirac gamma traces with analytic fallback if the paclet is absent.
 
 Inspect available metadata:
 
@@ -66,6 +68,8 @@ PhysicsCLI`CLI`TaskCatalog[]
   `wolframscript -file physics_cli.wls --task=partition-function --beta=0.5 --spectrum='[0.5,1.5,2.5]' | jq .`
 - Export high throughput trajectories:  
   `wolframscript -file scripts/damped_oscillator.wls --gamma=0.05 --omega0=1 --force=1 --drive=0.8 --tmax=100 --samples=4001 --out=response.csv`
+- Monitor Helmholtz residuals:  
+  `wolframscript -file physics_cli.wls --task=helmholtz-sweep --densities='[150,200,300,400]' --frequency=25 --waveSpeed=1`
 
 All task options follow strict `--key=value` syntax. Numbers are validated against a restricted grammar to resist accidental `ToExpression` evaluation. Vector inputs are encoded as JSON arrays (for example `[-1,1]`).
 
@@ -74,6 +78,7 @@ All task options follow strict `--key=value` syntax. Numbers are validated again
 - `make smoke` exercises the PhysicsCLI smoke suite.
 - `make qho` computes default harmonic oscillator energies and writes `qho_energies.json`.
 - `make helmholtz` exports a JSON summary of the Helmholtz solution.
+- `make helmholtz-sweep` runs a residual sweep over representative mesh densities.
 - `make billiards` produces `stadium_eigs.json` with the default eigen spectrum.
 - `make fourier`, `make partition`, `make physics` demonstrate common PhysicsCLI invocations.
 
@@ -82,6 +87,7 @@ All task options follow strict `--key=value` syntax. Numbers are validated again
 - ASCII only outputs keep logs parsable across remote shells.
 - Every task returns machine readable Associations so you can compose results across simulation stages without relying on notebooks.
 - Finite-difference defaults avoid FEM licensing while mesh density remains configurable to manage compute costs.
+- Local paclet caching (via `paclets/` or `FAT_TAILED_PACLET_PATH`) keeps gamma-trace tooling available without network access.
 - Smoke tests cover Fourier analytics, thermodynamics, quantum spectra, and classical integration to catch regressions rapidly.
 
 ## Further Reading

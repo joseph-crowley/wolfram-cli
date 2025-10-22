@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 WL := wolframscript
 
-.PHONY: all smoke qho helmholtz billiards fourier partition physics clean
+.PHONY: all smoke qho helmholtz helmholtz-sweep billiards fourier partition physics clean
 
 all: smoke
 
@@ -15,6 +15,9 @@ qho:
 
 helmholtz:
 	$(WL) -file scripts/helmholtz_square.wls
+
+helmholtz-sweep:
+	$(WL) -file physics_cli.wls --task=helmholtz-sweep --densities='[150,200,300,400]' --frequency=25 --waveSpeed=1
 
 billiards:
 	$(WL) -file scripts/billiard_eigs.wls --modes=6 --meshMax=0.03
