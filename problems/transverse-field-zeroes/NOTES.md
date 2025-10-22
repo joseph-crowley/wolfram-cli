@@ -65,3 +65,7 @@ Notes
 - The sketch intentionally uses y prime as an axis to make the orthogonal
   relationship between y prime and z prime explicit without rotating the full
   coordinate system.
+
+Date: 2025-10-22 16:15:00 PDT
+Command: wolframscript -file problems/transverse-field-zeroes/solve.wls
+Outcome: success; report.txt and sketch.png written
