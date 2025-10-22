@@ -1,120 +1,127 @@
 # Wolfram CLI Runbook
 
-Last verified: October 14, 2025 on macOS with Mathematica installed at `/Applications/Wolfram.app`. See `FIELD_MANUAL.md` for an extended physics-focused CLI handbook built on these steps.
+Last verified: October 22, 2025 on macOS with Mathematica installed at `/Applications/Wolfram.app`. This document captures the operational steps for the PhysicsCLI stack; see `FIELD_MANUAL.md` for the deep-dive physics workflows.
 
-## Prerequisites
+## 1. Environment Prerequisites
 
-- Mathematica or the standalone Wolfram Engine must be installed locally.
-- Ensure the CLI tooling shipped with the install is present. On this machine `wolframscript` reports `WolframScript 1.13.0 for Mac OS X ARM (64-bit)`:
-
-  ```sh
-  /Applications/Wolfram.app/Contents/MacOS/wolframscript -version
-  ```
-
-- Optional: add the binaries directory to PATH to avoid typing the full path each time.
-
-  ```sh
-  export PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH"
-  ```
-
-## PhysicsCLI Package Overview
-
-- `physics_cli.wls` is the consolidated entry point. Run `wolframscript -file physics_cli.wls --task=list` to enumerate tasks.
-- Library modules live under `lib/PhysicsCLI`. Load them in ad hoc Wolfram sessions via `Get["lib/PhysicsCLI/CLI.wl"]`.
-- Wrapper scripts under `scripts/` now defer to the shared task registry, preserving legacy ergonomics while guaranteeing consistent parsing, logging, and outputs.
-
-## Discovering the Binaries
-
-1. Try the PATH lookup first:
+1. **Mathematica / Wolfram Engine** – ensure a local desktop installation; the current system reports:
 
    ```sh
-   which wolframscript || which WolframKernel || which math
+   /Applications/Wolfram.app/Contents/MacOS/wolframscript -version
+   # WolframScript 1.13.0 for Mac OS X ARM (64-bit)
    ```
 
-   If nothing is returned, fall back to the application bundle.
-
-2. Confirm the install directory:
+2. **PATH configuration** – expose the binaries to the shell session used by Codex:
 
    ```sh
-   ls /Applications/Wolfram.app/Contents/MacOS
+   export PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH"
    ```
 
-   Expected executables include `wolframscript`, `WolframKernel`, `MathKernel`, and helpers like `wolfram`.
+3. **Repository bootstrap** – from `/Users/joe/code/wolfram-cli` run `make smoke` to confirm the library loads cleanly (details in §6).
 
-## Quick Sanity Checks
+## 2. PhysicsCLI Layout
 
-Run these after confirming the binaries to ensure everything works end-to-end.
+- `physics_cli.wls` – primary entry point; accepts `--task=<name>` plus task-specific flags.
+- `lib/PhysicsCLI` – modular packages providing utilities, analysis, classical, and quantum toolkits. Load interactively via `Get["lib/PhysicsCLI/CLI.wl"]`.
+- `scripts/` – thin wrappers that call into the shared task registry to preserve legacy automation (e.g., CI or Makefile targets).
+- `NOTES.md` – live operations log; update after each validation campaign.
+
+Enumerate the current task catalog at any time:
 
 ```sh
-# One-liner numeric check
-/Applications/Wolfram.app/Contents/MacOS/wolframscript -code 'N[Zeta[3], 50]'
-
-# Structure-preserving output
-/Applications/Wolfram.app/Contents/MacOS/wolframscript -code 'Range[5]^2 // InputForm'
-
-# Kernel via stdin
-printf 'FactorInteger[2^61 - 1]\nQuit[]\n' | /Applications/Wolfram.app/Contents/MacOS/WolframKernel -noprompt
-
-# Headless export (writes bessel.pdf in the current directory)
-/Applications/Wolfram.app/Contents/MacOS/wolframscript -code 'Export["bessel.pdf", Plot[BesselJ[0,x], {x,0,30}]]'
+wolframscript -file physics_cli.wls --task=list
 ```
 
-## Usage Patterns
+## 3. Binary Discovery & Sanity Checks
 
-- **One-liners:** Use `-code` for inline expressions. Append `// InputForm` or wrap with `ExportString[..., "JSON"]` for machine-friendly output.
-- **Reading from stdin:** Pipe expressions into `WolframKernel -noprompt`. Always terminate with `Quit[]` to exit cleanly.
-- **Script files:** Save `.wl` files and execute with `wolframscript -file script.wl`. For executables, add a shebang and `chmod +x script.wl`. Because the shebang uses `/usr/bin/env wolframscript`, the `wolframscript` binary must be discoverable on `PATH`. When running locally without modifying shell profiles, prefix commands with `PATH="/Applications/Wolfram.app/Contents/MacOS:$PATH" ./script.wl`. See `scripts/` for ready-made examples.
+1. **Executable discovery**
 
-  ```wl
-  #!/usr/bin/env wolframscript
-  Print[Integrate[Exp[-x^2], {x, -Infinity, Infinity}]];
+   ```sh
+   which wolframscript || ls /Applications/Wolfram.app/Contents/MacOS
+   ```
+
+2. **Smoke checks** – verify numerical evaluation, structured output, stdin kernel execution, and headless graphics:
+
+   ```sh
+   wolframscript -code 'N[Zeta[3], 50]'
+   wolframscript -code 'Range[5]^2 // InputForm'
+   printf 'FactorInteger[2^61-1]\nQuit[]\n' | WolframKernel -noprompt
+   wolframscript -code 'Export["bessel.pdf", Plot[BesselJ[0,x], {x,0,30}]]'
+   ```
+
+## 4. Operating the CLI
+
+- **Unified driver** – preferred interface for automation:
+
+  ```sh
+  wolframscript -file physics_cli.wls --task=partition-function --beta=0.7 --spectrum='[0.5,1.5,2.5,3.5]'
   ```
 
-- **Argument handling:** Inside scripts, drop the program name with `Rest @ $ScriptCommandLine`. Example:
+- **Wrapper scripts** – legacy compatibility; each simply loads PhysicsCLI under the hood:
 
-  ```wl
-  args = Rest @ $ScriptCommandLine;
-  data = Import[args[[1]], "Table"];
-  nlm = LinearModelFit[data, x, x];
-  Export[args[[2]], {nlm["BestFitParameters"], nlm["RSquared"]} // InputForm];
+  ```sh
+  wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho.json
   ```
 
-  Run with `wolframscript -file fit.wl data.csv result.txt`.
+- **Task options** – every flag uses `--key=value` form. Numeric arguments are parsed with hardened validators (no `ToExpression` on raw user input). Arrays are passed as JSON literals (e.g., `--spectrum='[0.5,1.5,2.5]'`).
 
-- **Headless graphics & exports:** `Export["plot.png", Plot[Sin[x], {x, 0, 2 Pi}]]` works without a notebook front end.
-- **Parallel control:** Default parallelization kicks in automatically for parallel constructs. Use `LaunchKernels[n]` or `SetSystemOptions["ParallelOptions" -> "ParallelThreadNumber" -> n]` for deterministic core counts.
-- **Exit codes:** Wrap top-level operations with `Check`/`If` and call `Exit[1]` or `Exit[0]` to propagate failures to calling shells.
+- **Output formats** – default is JSON. Override with `--output=text` for quick inspection.
 
-## Toolkit Conventions (scripts/)
+## 5. Physics Task Inventory
 
-- Flags: All scripts accept `--key=value` (no spaces). Boolean flags are present-or-absent.
-- Symbolic JSON: Scripts that emit symbolic results (e.g., Fourier transforms) encode them as `InputForm` strings in JSON to remain strict-JSON compliant.
-- Reserved symbols: Avoid built-in names like `N` or `C` in variables/flags; scripts use ASCII names (`--n`, `--omega` etc.).
-- FEM license: FEM-heavy demos may require an appropriate license. If you see a license error, run numeric-only demos instead (`qho_eigs.wls`, `damped_oscillator.wls`).
+| Domain | Task | Description | Notes |
+| --- | --- | --- | --- |
+| Statistical physics | `partition-function` | Canonical partition function, internal energy, heat capacity from a discrete spectrum. | Accepts JSON lists or file paths (wrapper) |
+| Quantum mechanics | `qho-spectrum` | Finite-element harmonic oscillator eigenvalues (low modes). | Writes `qho_energies.json` via wrappers |
+| Quantum angular momentum | `clebsch-gordan` | Non-zero Clebsch–Gordan coefficients tabulated as JSON. | Full numeric output |
+| Quantum field theory | `dirac-trace` | `DiracTrace[γ^μ γ^ν]`; uses FeynCalc if available, otherwise analytic result `4 g^{μν}`. | No external download required |
+| Classical dynamics | `damped-oscillator` | Forced damped oscillator response sampled at fixed cadence. | Returns trajectory plus suggested CSV name |
+| Electrodynamics / waves | `helmholtz-square` | Finite-difference Helmholtz solve on the unit square with Dirichlet data. | Five-point stencil; no FEM license needed |
+| Chaos / spectral | `stadium-billiard` | Stadium billiard eigen spectrum (still uses FEM). | Requires FEM-enabled license |
 
-## Common Tasks with the Toolkit
+## 6. Routine Validation
 
-- Fourier Gaussian (JSON): `wolframscript -file scripts/fourier_gaussian.wls --mu=0 --sigma=1 --t=0`
-- Damped oscillator (CSV): `wolframscript -file scripts/damped_oscillator.wls --gamma=0.1 --omega0=1 --F=1 --Omega=1 --tmax=10 --out=x.csv`
-- QHO eigenvalues (JSON): `wolframscript -file scripts/qho_eigs.wls --n=6 --L=8 --m=1 --omega=1 --out=qho_energies.json`
-- Partition function (JSON): `wolframscript -file scripts/partition_fn.wls --beta=1 --in=qho_energies.json`
-- Clebsch-Gordan (JSON): `wolframscript -file scripts/clebsch_gordan_table.wls --j1=1 --j2=1 --J=2`
+1. Run the consolidated smoke suite:
 
-## Troubleshooting Updates
+   ```sh
+   make smoke
+   # wolframscript -file scripts/smoke_tests.wls
+   ```
 
-- Protected symbols: If you see `Set::wrsym` or similar, rename variables/flags to non-protected names.
-- JSON failures (`Export::jsonstrictencoding`): Convert symbolic output with `ToString[..., InputForm]` prior to JSON export.
-- FEM errors: Run interval-domain PDEs (e.g., `qho_eigs.wls`) or skip FEM demos if license is unavailable.
+   The suite covers Fourier analytics, thermodynamics, QHO spectra, and oscillator integration; it exits non-zero on failure and prints offending tests.
 
-## Troubleshooting
+2. Spot-check principal tasks (recommended before deployments):
 
-- **`ls` or direct invocation hangs:** Verify permissions on the app bundle (`stat /Applications/Wolfram.app`). If needed, clear quarantine attributes (`xattr -d com.apple.quarantine ...`).
-- **`wolframscript` missing:** Use the fully qualified path (`/Applications/Wolfram.app/Contents/MacOS/wolframscript`) or symlink it into `/usr/local/bin`.
-- **Unexpected box-form output:** Post-process with `InputForm`, `FullForm`, or `ExportString[..., "JSON"]`.
-- **Long-running jobs:** Start scripts with `-noprompt` and prefer `wolframscript -file` to avoid accumulating state between runs.
-- **Version drift:** Rerun the sanity checks and `-version` command after upgrades to confirm nothing broke.
+   ```sh
+   wolframscript -file physics_cli.wls --task=partition-function --beta=0.7 --spectrum='[0.5,1.5,2.5,3.5]'
+   wolframscript -file physics_cli.wls --task=qho-spectrum --n=6 --L=9 --m=1 --omega=1
+   wolframscript -file physics_cli.wls --task=damped-oscillator --gamma=0.05 --omega0=1 --force=1 --drive=0.9 --tmax=40 --samples=201
+   wolframscript -file physics_cli.wls --task=helmholtz-square --frequency=25 --waveSpeed=1 --meshDensity=300
+   wolframscript -file physics_cli.wls --task=dirac-trace --muLabel=mu --nuLabel=nu
+   ```
 
-## Next Steps
+Document outcomes in `NOTES.md` after each run.
 
-- Consider wrapping common invocations in shell scripts or a Makefile target for reproducibility.
-- Add automated smoke tests (e.g., in CI) that run the sanity commands to catch environment regressions early.
+## 7. Troubleshooting & Resilience
+
+- **Missing `wolframscript`** – use full path or symlink into `/usr/local/bin`.
+- **JSON encoding errors** – ensure symbolic expressions are converted via `ToString[..., InputForm]` (handled automatically inside PhysicsCLI).
+- **Helmholtz licensing** – the finite-difference implementation eliminates FEM licensing requirements; adjust `meshDensity` to balance fidelity/cost.
+- **FeynCalc unavailable** – the Dirac trace task emits the analytic `4 g(μ,ν)` and records `Method -> "Analytic Clifford trace (FeynCalc unavailable)"`. Install FeynCalc locally if higher-order traces are needed.
+- **Long running tasks** – prefer `physics_cli.wls` to isolate runs and guarantee clean exit codes; wrap invocations in shell scripts for retries/backoff.
+
+## 8. Operational Hygiene
+
+- Keep `PATH` exports in `~/.zprofile`/`~/.zshrc` so Codex sessions inherit them automatically.
+- Maintain ASCII-only outputs to simplify log parsing (`physics_cli.wls` enforces this for all JSON/text streams).
+- Record every validation session in `NOTES.md`, including command lines, notable outputs, and any environmental blockers.
+- Push commits to the private GitHub remote after each coherent change:
+
+  ```sh
+  git status -sb
+  git add ...
+  git commit -m "<summary>"
+  git push origin main
+  ```
+
+With these steps, the PhysicsCLI stack remains reproducible, license-compliant, and ready for Azure burst deployments or local exploratory physics workflows.

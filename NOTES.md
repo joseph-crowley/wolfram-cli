@@ -18,6 +18,7 @@
   - Classical dynamics: `wolframscript -file physics_cli.wls --task=damped-oscillator --gamma=0.05 --omega0=1 --force=1 --drive=0.9 --tmax=40 --samples=201` producing a 201-point trajectory with damping-induced beat structure.
 - QFT trace workflow: `wolframscript -file physics_cli.wls --task=dirac-trace --muLabel=mu --nuLabel=nu` now returns the analytic result `4 * g(mu,nu)` when FeynCalc is unavailable, preserving CLI usability without external paclets.
 - Electromagnetic Helmholtz solve: `wolframscript -file physics_cli.wls --task=helmholtz-square --frequency=25 --waveSpeed=1 --meshDensity=300` computes the field via a five-point finite-difference stencil, eliminating FEM license requirements.
+- Refreshed `RUNBOOK.md` with the PhysicsCLI workflow, validation checklist, and license-aware task descriptions.
 
 ## References
 - https://www.wolfram.com/wolframscript/
