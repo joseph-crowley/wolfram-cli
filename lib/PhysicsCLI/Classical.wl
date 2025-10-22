@@ -102,9 +102,10 @@ HelmholtzSquareSolution[config_Association] :=
    {j, 2, ny - 1}, {i, 2, nx - 1}
    ];
   sample = Table[
-    With[{xVal = x, yVal = y},
-     {xVal, yVal,
-      grid[[1 + Round[xVal/hx], 1 + Round[yVal/hy]]]}
+    With[{xVal = x, yVal = y,
+      xi = Clip[1 + Round[x*(nx - 1)], {1, nx}],
+      yi = Clip[1 + Round[y*(ny - 1)], {1, ny}]},
+     {xVal, yVal, grid[[xi, yi]]}
      ],
     {x, 0., 1., sampleStep}, {y, 0., 1., sampleStep}
     ];
