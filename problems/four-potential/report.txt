@@ -1,0 +1,23 @@
+Four-Potential Problem Report
+
+Part (a): Covariant structure of potentials
+
+The spacetime gradient transforms as a covector and the electric and magnetic fields transform together under Lorentz maps. Demanding that spacetime derivatives of a single candidate potential reproduce those field transformations forces the scalar potential and the spatial vector potential to transform together as one four-quantity. Gauge freedom allows addition of a spacetime gradient of a scalar, which preserves the fields. Fixing a covariant gauge removes that ambiguity and leaves a linear Lorentz transformation law for the four-potential.
+
+Part (b): Equipotential cross section
+
+We evaluate the standard retarded scalar potential of a uniformly moving point charge at a fixed laboratory time. The target contour value is chosen so the static case is a unit circle. For nonzero speeds the contours flatten along the motion and expand transversely, forming oblate ellipses. The figure equipotential_cross_section.png overlays four speeds.
+
+Numeric intercepts (units where the static radius is 1)
+v/c = 0.3, gamma = 1.048, x-intercept ~ 1.000, y-intercept ~ 1.048
+v/c = 0.5, gamma = 1.155, x-intercept ~ 1.000, y-intercept ~ 1.155
+v/c = 0.7, gamma = 1.400, x-intercept ~ 1.000, y-intercept ~ 1.400
+v/c = 0.9, gamma = 2.294, x-intercept ~ 1.000, y-intercept ~ 2.294
+
+Artifacts
+- report.txt (this file)
+- equipotential_cross_section.png (overlaid contours)
+
+References
+https://www.feynmanlectures.caltech.edu/II_26.html
+https://en.wikipedia.org/wiki/Li%C3%A9nard%E2%80%93Wiechert_potential
