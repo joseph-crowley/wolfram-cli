@@ -71,52 +71,93 @@ ClebschGordanTable[config_Association] :=
  ];
 
 ensureFeynCalc[] :=
- Module[{file, installFromLocal, envPath, searchRoots, pacletFile, installResult},
+ Module[{file, envPath, searchRoots, pacletFile, zipFile, installResult},
   file = Quiet@FindFile["FeynCalc`"];
+  If[file === $Failed, file = Quiet@FindFile["HighEnergyPhysics`FeynCalc`"]];
   If[file === $Failed,
-   installFromLocal :=
-    Module[{},
-     envPath = Environment["FAT_TAILED_PACLET_PATH"];
-     searchRoots = DeleteMissing@Flatten@{
-        If[StringQ[envPath] && envPath =!= "", envPath, Nothing],
-        If[DirectoryQ[parentDir], FileNameJoin[{parentDir, "paclets"}], Nothing]
-      };
-     pacletFile = SelectFirst[
-        Flatten[FileNames[{"FeynCalc*.paclet"}, searchRoots, Infinity]],
-        FileExistsQ,
-        Missing["NotFound"]
-      ];
-     If[pacletFile === Missing["NotFound"], Return[$Failed]];
-     Quiet@Check[PacletInstall[pacletFile, "IgnoreVersion" -> True], $Failed]
+   envPath = Environment["FAT_TAILED_PACLET_PATH"];
+   searchRoots = DeleteMissing@Flatten@{
+      If[StringQ[envPath] && envPath =!= "", envPath, Nothing],
+      If[DirectoryQ[parentDir], FileNameJoin[{parentDir, "paclets"}], Nothing],
+      If[DirectoryQ[FileNameJoin[{parentDir, ".."}]], FileNameJoin[{parentDir, "..", "paclets"}], Nothing]
+    };
+   pacletFile = SelectFirst[
+      Flatten[FileNames[{"FeynCalc*.paclet"}, searchRoots, Infinity]],
+      FileExistsQ,
+      Missing["NotFound"]
     ];
-   installResult = installFromLocal;
+   installResult = If[pacletFile =!= Missing["NotFound"],
+      Quiet@Check[PacletInstall[pacletFile, "IgnoreVersion" -> True], $Failed],
+      $Failed
+     ];
+   If[installResult === $Failed,
+    zipFile = SelectFirst[
+      Flatten[FileNames[{"FeynCalc*.zip", "fclatest.zip"}, searchRoots, Infinity]],
+      FileExistsQ,
+      Missing["NotFound"]
+     ];
+    installResult = If[zipFile =!= Missing["NotFound"],
+      Module[{installDir = FileNameJoin[{$UserBaseDirectory, "Applications"}]},
+       If[!DirectoryQ[installDir], CreateDirectory[installDir, CreateIntermediateDirectories -> True]];
+       Quiet@Check[ExtractArchive[zipFile, installDir], $Failed]
+      ],
+      $Failed
+     ];
+   ];
    If[installResult === $Failed,
     EmitError[
-     "FeynCalc paclet not found. Place the archive under paclets/ or set FAT_TAILED_PACLET_PATH."
+     "FeynCalc archive not found. Place FeynCalc.paclet or fclatest.zip under paclets/ or set FAT_TAILED_PACLET_PATH."
     ];
     Return[False];
    ];
    file = Quiet@FindFile["FeynCalc`"];
+   If[file === $Failed, file = Quiet@FindFile["HighEnergyPhysics`FeynCalc`"]];
    If[file === $Failed,
-    EmitError["FeynCalc installation from local paclet failed."];
+    EmitError["FeynCalc installation from local archive failed."];
     Return[False];
    ];
   ];
-  Needs["FeynCalc`"];
+  If[Quiet@FindFile["FeynCalc`"] =!= $Failed,
+   Needs["FeynCalc`"],
+   Needs["HighEnergyPhysics`FeynCalc`"]
+  ];
   True
  ];
 
 DiracTraceGammaPair[config_Association] :=
- Module[{muLabel = config["muLabel"], nuLabel = config["nuLabel"], ok, expr, reduced},
+ Module[{muLabel = config["muLabel"], nuLabel = config["nuLabel"], ok, expr, reduced, metricSyms, formatted},
   ok = ensureFeynCalc[];
-
   If[TrueQ[ok],
-   expr = DiracTrace[GA[Symbol[muLabel]].GA[Symbol[nuLabel]]];
-   reduced = DiracSimplify[expr];
+   Quiet@Check[
+     ToExpression["FeynCalc`$LoadFeynArts"] = False;
+     ToExpression["FeynCalc`$LoadPhi"] = False;
+     ToExpression["FeynCalc`$LoadTARCER"] = False,
+     Null
+    ];
+   Quiet@Check[
+     ToExpression["HighEnergyPhysics`FeynCalc`$LoadFeynArts"] = False;
+     ToExpression["HighEnergyPhysics`FeynCalc`$LoadPhi"] = False;
+     ToExpression["HighEnergyPhysics`FeynCalc`$LoadTARCER"] = False,
+     Null
+    ];
+   expr = ToExpression["HighEnergyPhysics`FeynCalc`DiracTrace"][
+      ToExpression["HighEnergyPhysics`FeynCalc`GA"][Symbol[muLabel]] .
+      ToExpression["HighEnergyPhysics`FeynCalc`GA"][Symbol[nuLabel]]
+     ];
+   reduced = ToExpression["HighEnergyPhysics`FeynCalc`DiracSimplify"][expr];
+   metricSyms = {
+      ToExpression["HighEnergyPhysics`FeynCalc`MetricTensor"],
+      ToExpression["FeynCalc`MetricTensor"],
+      MetricTensor
+     };
+   formatted = reduced /. {
+      metricSyms[[1]][a_, b_] :> MetricTensor[a, b],
+      metricSyms[[2]][a_, b_] :> MetricTensor[a, b]
+     };
    <|
     "Problem" -> "Dirac gamma trace",
     "Inputs" -> <|"MuLabel" -> muLabel, "NuLabel" -> nuLabel|>,
-    "Result" -> ToString[reduced, InputForm],
+    "Result" -> ToString[formatted, InputForm],
     "Method" -> "FeynCalc"
    |>,
    <|
