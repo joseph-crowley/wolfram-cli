@@ -146,3 +146,117 @@
   Each contains a README with problem statement, pros and cons, community
   acceptance criteria, approach in this repo, milestones, risks, and a
   planned CLI sketch. Index at ai-does-physics/README.md.
+
+### Standard Model aligned roadmap (no implementation yet)
+
+Context
+
+- Goal: pursue mainstream, non esoteric work tied to the Standard Model and
+  SMEFT, with high clarity and reproducibility from this CLI repo.
+- Deliverables: ASCII JSON outputs, plots, and scripts runnable headless.
+- Dates below are targets for planning; we will revise once implementation
+  starts. Today is 2025-10-24.
+
+A) Photon photon EFT positivity (Pilot A)
+
+- Objective
+  - Bound low energy Wilson coefficients for light by light scattering using
+    subtracted dispersion relations, crossing, and unitarity.
+
+- Scope and assumptions
+  - Forward limit first, then small t derivatives at t near 0.
+  - Helicity channels: ++, +-, and mixed combinations.
+  - Analyticity and crossing assumed; partial wave unitarity enforced.
+  - Clear normalization and sign conventions documented in code and docs.
+
+- Inputs and outputs (JSON sketch)
+  - Input: channel list, expansion order, subtraction count, s window, t
+    value or derivative order, precision and quadrature controls.
+  - Output: feasibility status, allowed region sample or vertices, stability
+    diagnostics versus subtractions and windows, timing, and seeds.
+
+- Planned CLI
+  - wolframscript -file physics_cli.wls --task=eft-positivity \
+    --channels='["++","+-"]' --order=4 --subtractions=1 --smin=sth \
+    --smax=smax --t=0 --output=json
+
+- Milestones and target dates
+  - M1: forward limit, single subtraction, single helicity. Target 2025-11-07.
+  - M2: mixed helicities and small t derivatives. Target 2025-11-21.
+  - M3: robustness scans across windows and subtraction choices, with plots
+    and JSON summaries. Target 2025-12-05.
+
+- Acceptance tests
+  - Reproduce known SM sign pattern at low energy as a sanity check.
+  - Stability of bounds across reasonable subtraction choices and windows.
+  - Deterministic outputs under fixed seeds and precision settings.
+
+- Risks and mitigations
+  - IR sensitivity: design subtractions as first class options; report bands.
+  - Convention drift: pin helicity and normalization in a single module and
+    validate in smoke tests.
+
+B) IR subtracted positivity with massless states (extension of A)
+
+- Objective
+  - Make positivity statements IR safe when massless exchanges are present.
+
+- Scope and assumptions
+  - Subtraction schemes compared side by side with diagnostics.
+  - Optional exclusion of pole regions in partial wave integrals.
+
+- Planned CLI
+  - Extend eft-positivity with --ir-scheme and --subtractions flags.
+
+- Milestones and target dates
+  - M1: one worked example with two subtractions and a pole exclusion window.
+    Target 2025-12-12.
+  - M2: scheme comparison and convergence study. Target 2026-01-09.
+
+- Acceptance tests
+  - Agreement across equivalent schemes within quoted uncertainties.
+
+- Risks and mitigations
+  - Scheme dependence: present families of schemes and quantify residuals.
+
+C) Landau singularity mapper for one loop SM topologies (parallel lane)
+
+- Objective
+  - Solve Landau equations for triangles and boxes with SM like masses and
+    map singular surfaces in Mandelstam space.
+
+- Scope and assumptions
+  - Start with massless triangle and equal mass box, then mixed masses.
+  - Provide region logic as JSON and ASCII plots for quick inspection.
+
+- Planned CLI
+  - wolframscript -file physics_cli.wls --task=landau-mapper --topology=box \
+    --masses='[m1,m2,m3,m4]' --smin=... --smax=... --tmin=... --tmax=...
+
+- Milestones and target dates
+  - M1: reproduce textbook loci for baseline cases. Target 2025-11-14.
+  - M2: mixed masses and verified region decomposition. Target 2025-12-05.
+
+- Acceptance tests
+  - Numeric spot checks near predicted singular points match local behavior.
+
+Repo changes planned when implementation starts
+
+- lib/PhysicsCLI/Analysis.wl: dispersion sum rule assembly, convex feasibility
+  helpers, and Landau solver utilities.
+- lib/PhysicsCLI/CLI.wl: register eft-positivity and landau-mapper tasks.
+- RUNBOOK.md: add workflows, flags, and validation checklists.
+- scripts/: thin wrappers if needed for legacy pipelines.
+- tests: smoke coverage with fast settings and deterministic seeds.
+
+CI and operations
+
+- Expand make smoke with quick positivity and mapper checks under tight
+  settings; nightly runs add stability scans behind a flag.
+- Heavy scans can burst to Azure later; keep defaults CPU light for laptops.
+
+References
+
+- https://www.wolfram.com/wolframscript/
+- https://feyncalc.github.io
+- https://packagex.hepforge.org
