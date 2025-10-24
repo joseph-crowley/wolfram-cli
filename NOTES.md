@@ -260,3 +260,138 @@ References
 - https://www.wolfram.com/wolframscript/
 - https://feyncalc.github.io
 - https://packagex.hepforge.org
+
+### Approach playbook for solving physics problems with this repo (instructions only)
+
+Principles
+
+- Define the exact question in operational terms and pin conventions up front.
+- Favor analyticity, unitarity, symmetry, and positivity constraints when
+  available; quantify what is assumed versus what is proved.
+- Treat rare, extreme regimes explicitly; design diagnostics that do not fail
+  silently when tails dominate.
+- Make outputs machine readable and ascii safe; build fast smoke paths and
+  slower, precise verification runs.
+
+Operational checklist (do not solve, just plan)
+
+1) Frame and normalize
+   - State the physical observable, kinematic domain, and boundary conditions.
+   - Fix units, sign conventions, helicity bases, and parameter ranges.
+   - Declare global assumptions for WL runs and seed randomness deterministically.
+2) Choose method and error budget
+   - Symbolic: dispersion relations, asymptotics, or algebraic solving.
+   - Numeric: finite differences, quadrature, or convex feasibility.
+   - Set an a priori tolerance and residual definition that will gate success.
+3) Design CLI and schema
+   - Enumerate flags and defaults; define a stable JSON schema for inputs and
+     outputs, including diagnostics and seeds.
+4) Plan validation
+   - Textbook or SM baselines to reproduce; mesh or window sweeps; cross checks
+     via alternative formulations; failure certificates for infeasibility.
+5) Cost and performance plan
+   - Smoke settings for laptops; heavier settings for Azure burst nodes; record
+     timing and precision settings in outputs.
+6) Evidence ledger
+   - Predetermine plots, tables, and JSON artifacts that will constitute proof;
+     ensure headless generation from a single command.
+
+Priority problem approaches (instructions, not execution)
+
+A) Photon photon EFT positivity
+
+- Objective
+  - Bound low energy Wilson coefficients for light by light scattering using
+    subtracted dispersion relations under crossing and unitarity.
+
+- Conventions to pin before coding
+  - Helicity amplitude basis and normalization; definition of forward limit and
+    small t derivatives; mapping between low energy coefficients and Wilson
+    parameters; threshold and integration windows.
+
+- Inputs to accept (future CLI flags)
+  - Channels, expansion order, subtraction count, s range, t value or
+    derivative order, quadrature and precision controls, and random seeds.
+
+- Planned method
+  - Assemble forward limit dispersion with a chosen number of subtractions.
+  - Incorporate partial wave positivity and crossing for selected channels.
+  - Encode constraints as a feasibility problem; return allowed region samples
+    or vertices plus diagnostics on stability versus windows and subtractions.
+
+- Diagnostics and residuals
+  - Report sensitivity to subtraction count, energy window, and precision.
+  - Emit a status block with any violations and the tightest constraints.
+
+- Acceptance tests
+  - Reproduce known SM sign patterns; bounds stable within quoted windows.
+
+- Artifacts to produce later
+  - JSON region, PNG plot, log with inputs, seeds, precision, and timings.
+
+B) IR subtracted positivity with massless states
+
+- Objective
+  - Make positivity statements robust in channels with massless exchanges.
+
+- Conventions to pin
+  - Families of subtraction schemes and any pole exclusion protocols; report of
+    regulator parameters and how invariance is assessed.
+
+- Inputs to accept
+  - ir scheme selection, number of subtractions, exclusion windows, precision.
+
+- Planned method
+  - Implement multiple subtraction families behind a common API; compute bounds
+    under each; quantify scheme sensitivity; attempt regulator independent
+    statements where possible.
+
+- Diagnostics and residuals
+  - Scheme sensitivity metrics; warnings when invariance is not achieved.
+
+- Acceptance tests
+  - Agreement across equivalent schemes within stated tolerances.
+
+- Artifacts to produce later
+  - Scheme comparison tables, overlapped bound plots, JSON diagnostics.
+
+C) Landau singularity mapper for one loop topologies
+
+- Objective
+  - Map singular surfaces for triangles and boxes with SM like masses and
+    verify against known loci.
+
+- Conventions to pin
+  - Topology descriptors, mass assignments, invariant definitions, and kinematic
+    region limits; physical sheet conventions for classification.
+
+- Inputs to accept
+  - topology, mass list, invariant ranges, sampling density, precision.
+
+- Planned method
+  - Solve the stationary and on shell conditions symbolically; case split by
+    masses and invariant signs; export inequality regions and parametric
+    descriptions; sample numerically near predicted surfaces and confirm
+    singular behavior with stable local evaluations.
+
+- Diagnostics and residuals
+  - Coverage of region decomposition; counts of solutions per region; spot
+  checks near surfaces with measured blow up rates where applicable.
+
+- Acceptance tests
+  - Reproduce textbook loci for baseline cases and match numeric spot checks.
+
+- Artifacts to produce later
+  - JSON describing surfaces and regions, ASCII point clouds, PNG sketches.
+
+Implementation hygiene to follow later
+
+- Single source of truth for conventions; hardened parsing; deterministic seeds.
+- High precision defaults with explicit trade offs; residual gates in CI.
+- Headless plots and JSON only; no notebooks in version control.
+
+References
+
+- https://www.wolfram.com/wolframscript/
+- https://feyncalc.github.io
+- https://packagex.hepforge.org
