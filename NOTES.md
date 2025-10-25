@@ -606,3 +606,19 @@ References
 References
 https://reference.wolfram.com/language/ref/NIntegrate.html
 https://arxiv.org
+
+## 2025-10-25 16:47:00 UTC — Phase 0, Subphase 0.1 Scheme registry and option schemas
+- Implemented IR scheme registry module at `lib/PhysicsCLI/IR.wl` with canonical parsing and validation for five schemes: analytic, cutoff, exclude_below, band_gap, principal_value. Canonicalization accepts legacy spellings (excludeBelow, bandGap, pv) and returns normalized names.
+- Updated `problems/positivity-ir-multischeme/multi_scheme_ir_bounds.wls` to delegate interval construction and counterterm evaluation to the registry; kept integrator and payload unchanged. For principal_value the interval semantics match analytic at this phase; counterterm is zero, consistent with analytic subtraction baseline.
+- Added `scripts/scheme_registry_selftest.wls`, a capped wolframscript harness that validates a mixed corpus and emits JSON. Verified with CPU cap `ulimit -S -t 10` and wall cap via Python `subprocess.run(timeout=15)` to avoid hangs.
+- Verification results: selftest returned `validCount=8` and `invalidCount=6`, with empty `validFailures` and `invalidPasses`. Wall clock under 1.0 s on Mac mini m4 Pro. Artifact captured at `/tmp/scheme_selftest.json` during the run.
+- Attempted an additional guarded run of `multi_scheme_ir_bounds.wls` including principal_value; initial attempts tripped zsh quoting of JSON and a sanitize routine that mapped across function heads. Fixed by switching to Python timeout wrapper and replacing the mapping sanitizer with a structural `SanitizeJSON` that recurses only over associations and lists.
+- Remaining issue: one JSON export path still failed during the multi-scheme quick run when piping directly via Python wrapper. Given subphase 0.1 acceptance focuses on parsing/validation and artifact production, proceeded after the selftest passed under caps. I will revisit end-to-end multi-scheme JSON export in subphase 0.2 alongside quadrature guard wiring.
+- Git: committed and pushed changes on `main` with message `feat(subphase): add IR scheme registry and option schemas [phase:0 subphase:0.1]`.
+- Next subphase: 0.2 Certified quadrature wrappers.
+
+References
+- https://www.wolfram.com/wolframscript/
+- https://reference.wolfram.com/language/ref/ImportString.html
+- https://reference.wolfram.com/language/ref/Association.html
+- https://reference.wolfram.com/language/ref/ExportString.html
