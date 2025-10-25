@@ -664,3 +664,8 @@ References
 References
 - https://man.archlinux.org/man/ulimit.1
 - https://www.gnu.org/software/coreutils/manual/html_node/timeout-invocation.html
+
+## 2025-10-25 17:05:00 UTC — Phase 0, Subphase 0.6 repo hygiene and docs
+- Added non-hanging wrapper usage section to RUNBOOK. Left heavy artifact directories out of version control as before; existing `.gitignore` remains sufficient for current file set.
+- Tree is clean after smoke and selftests; no oversized binaries detected in `git ls-files`.
+- Next subphase: 0.7 Blocking risk audit of existing scripts.
