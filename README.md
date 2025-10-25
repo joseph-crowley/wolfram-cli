@@ -51,6 +51,7 @@ Transverse-Field Zeroes (Electrodynamics)
   - `fourier-gaussian`: Fourier transform of exp(-(x-mu)^2/(2 sigma^2)) evaluated at a target frequency.  
   - `partition-function`: Canonical partition function and thermodynamics from a supplied spectrum.  
   - `asymptotic-series`: Large-parameter asymptotic expansion of a cosine-Gaussian integral.
+  - `landau-mapper`: Cayley-determinant based scans locating leading Landau surfaces for triangle and box topologies.
 - `classical`  
   - `damped-oscillator`: Driven damped oscillator trajectory sampling with optional CSV export hints.  
   - `helmholtz-square`: Finite-difference solution of the Helmholtz equation on the unit square (no FEM license required).  

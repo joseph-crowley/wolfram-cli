@@ -72,6 +72,7 @@ wolframscript -file physics_cli.wls --task=qho-spectrum --n=6 --L=9 --m=1 --omeg
 wolframscript -file physics_cli.wls --task=damped-oscillator --gamma=0.05 --omega0=1 --force=1 --drive=0.9 --tmax=40 --samples=201
 wolframscript -file physics_cli.wls --task=helmholtz-square --frequency=25 --waveSpeed=1 --meshDensity=300
 wolframscript -file physics_cli.wls --task=helmholtz-sweep --densities='[150,200,300,400]' --frequency=25 --waveSpeed=1
+wolframscript -file physics_cli.wls --task=landau-mapper --topology=triangle --internalMasses='[0.7,0.8,0.9]' --externalSquares='[1.0,1.0,4.0]' --scanIndex=3 --scanRange='[0.1,6.0,200]'
 wolframscript -file physics_cli.wls --task=dirac-trace --muLabel=mu --nuLabel=nu
 ```
 
@@ -127,7 +128,33 @@ The JSON payload lists all non-zero coefficients. Use `jq` or Python for downstr
    - If caching fails, fallback is `4 * g(mu,nu)` (analytic Clifford trace). Investigate paclet availability.
 3. **Extending traces**: for higher-rank structures, edit `lib/PhysicsCLI/Quantum.wl` or run FeynCalc interactively (`Get["lib/PhysicsCLI/Quantum.wl"]; ensureFeynCalc[];` etc.).
 
-### 4.4 Classical Dynamics and Electrodynamics
+### 4.4 Landau Singularity Mapping
+1. **CLI entrypoint**
+   ```sh
+   wolframscript -file physics_cli.wls --task=landau-mapper \
+     --topology=triangle \
+     --internalMasses='[0.7,0.8,0.9]' \
+     --externalSquares='[1.0,1.0,4.0]' \
+     --scanIndex=3 \
+     --scanRange='[0.1,6.0,200]' \
+     --output=json
+   ```
+   - Confirms the Cayley determinant scan and returns `zeroCandidates` plus refined `roots` near the leading singular surface.
+   - Wrapper `problems/landau-singularity-mapper/landau_mapper.wls` now delegates to this task and preserves ASCII-safe JSON output.
+2. **Box topology sweep**
+   ```sh
+   wolframscript -file physics_cli.wls --task=landau-mapper \
+     --topology=box \
+     --internalMasses='[0.5,0.5,0.5,0.5]' \
+     --externalSquares='[0,0,0,0]' \
+     --sRange='[0.1,5.0,60]' \
+     --tRange='[0.1,5.0,60]' \
+     --output=json
+   ```
+   - Inspect `rowRoots`, `columnRoots`, and `curvePoints` to verify contour coverage.
+   - Example artefacts are staged under `problems/landau-singularity-mapper/runs/cli-integration-2025-10-25/` for regression baselines.
+
+### 4.5 Classical Dynamics and Electrodynamics
 #### Damped Oscillator
 ```sh
 wolframscript -file physics_cli.wls --task=damped-oscillator \
@@ -163,7 +190,7 @@ Log residual trends to ensure numerical stability and detect regressions.
   - Use ComplexExpand before imposing real equalities on phasor-derived expressions.
   - Keep outputs ASCII via InputForm; avoid front-end dependencies to enable headless runs.
 
-### 4.5 Spectral/Chaotic Systems
+### 4.6 Spectral/Chaotic Systems
 ```sh
 wolframscript -file physics_cli.wls --task=stadium-billiard \
   --modes=10 --meshMax=0.02 --radius=0.5

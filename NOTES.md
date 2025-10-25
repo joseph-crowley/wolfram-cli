@@ -468,3 +468,13 @@ References
 - https://www.wolfram.com/wolframscript/
 - https://feyncalc.github.io
 - https://packagex.hepforge.org
+
+## 2025-10-25 (Landau CLI integration)
+- First `which wolframscript` check failed, exported `/Applications/Wolfram.app/Contents/MacOS` onto PATH per runbook before executing any WL commands.
+- Current effort enhances the 2025-10-25 Landau mapper prototype by wiring its Cayley determinant machinery into `PhysicsCLI` via the new `landau-mapper` task.
+- Refactored `landau_mapper.wls` into a thin wrapper that consumes the shared option spec so standalone usage mirrors the unified driver.
+- Generated fresh outputs with the new task and wrapper:
+  - `wolframscript -file physics_cli.wls --task=landau-mapper --topology=triangle --internalMasses='[0.7,0.8,0.9]' --externalSquares='[1.0,1.0,4.0]' --scanIndex=3 --scanRange='[0.1,6.0,200]' --output=json`
+  - `wolframscript -file physics_cli.wls --task=landau-mapper --topology=box --internalMasses='[0.5,0.5,0.5,0.5]' --externalSquares='[0,0,0,0]' --sRange='[0.1,5.0,60]' --tRange='[0.1,5.0,60]' --output=json`
+  - Corresponding wrapper invocations verify delegation, artefacts stored under `problems/landau-singularity-mapper/runs/cli-integration-2025-10-25/`.
+- Updated RUNBOOK quick validation, domain playbook, and README to advertise the new task and CLI pathways.

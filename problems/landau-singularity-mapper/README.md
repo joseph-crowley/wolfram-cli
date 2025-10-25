@@ -33,6 +33,21 @@
 - Triangle mode scans one invariant at a time; `scanIndex` selects which external square to sweep and `scanRange` sets the search window and density.
 - Box mode requires both `sRange` and `tRange`; the script automatically infers `u` from the external squares when numeric values are provided.
 
+- Unified CLI path:
+  ```bash
+  /Applications/Wolfram.app/Contents/MacOS/wolframscript \
+    -file physics_cli.wls \
+    --task=landau-mapper \
+    --topology=triangle \
+    --internalMasses='[0.7,0.8,0.9]' \
+    --externalSquares='[1.0,1.0,4.0]' \
+    --scanIndex=3 \
+    --scanRange='[0.1,6.0,200]' \
+    --output=json \
+    > problems/landau-singularity-mapper/runs/cli-integration-2025-10-25/triangle_cli.json
+  ```
+  The `physics_cli` task emits the same JSON schema as the problem wrapper and now underpins the wrapper itself. Fresh artefacts from this run live in `runs/cli-integration-2025-10-25/`.
+
 ## Results
 - `triangle_scan.json` shows a single leading Landau root near squared energy 2.44 for internal masses (0.7, 0.8, 0.9) with external leg squares fixed at unity, matching expectations from the Cayley discriminant hierarchy.
 - `box_surface.json` records row-wise and column-wise lineage of zero crossings for an equal-mass scalar box with massless external legs; the merged curve set outlines the familiar hyperbola where the product `s t` balances the mass threshold term.
@@ -42,6 +57,7 @@
 - `landau_mapper.wls` — CLI implementation for triangle and box Landau scanning.
 - `triangle_scan.json` — sample scan verifying the triangle determinant root at moderate energy.
 - `box_surface.json` — two dimensional contour sample for the equal-mass box.
+- `runs/cli-integration-2025-10-25/` — reproducible outputs generated through the new `physics_cli` task and wrapper delegation.
 
 ## Next Steps
 - Integrate the mapper into `physics_cli.wls` with `--task=landau-mapper` to align with the existing command suite.
