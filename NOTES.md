@@ -268,6 +268,37 @@ References
 - https://www.wolfram.com/wolframscript/
 - https://feyncalc.github.io
 - https://packagex.hepforge.org
+
+## 2025-10-25 (Landau mapper)
+- Exported `/Applications/Wolfram.app/Contents/MacOS` onto PATH so `wolframscript`
+  resolves inside the CLI session.
+- Reviewed the approach playbook priority list and selected the Landau
+  singularity mapper because no prior implementation existed under `problems/`.
+  Confirmed directories for the photon positivity lanes already contain working
+  scripts, keeping the focus on the outstanding topological mapper.
+- Studied recent literature on principal Landau determinants and Cayley matrix
+  constructions for one loop diagrams to anchor the solver strategy.
+- Implemented `problems/landau-singularity-mapper/landau_mapper.wls` with
+  hardened argument parsing, Cayley determinant evaluation, and scan utilities
+  that locate sign change brackets before refining roots via secant updates.
+- Initial JSON export attempts failed because Wolfram cannot serialise
+  `Missing[...]`; replaced them with explicit `Null` during export to restore
+  strict ASCII JSON output and documented the fix inline.
+- Generated `triangle_scan.json` for internal masses `(0.7, 0.8, 0.9)` and
+  external squares `(1.0, 1.0, 4.0)` across 200 samples; the scan isolates a
+  Landau root near squared energy `2.44`, matching the Cayley discriminant
+  prediction.
+- Generated `box_surface.json` for the equal-mass scalar box with massless
+  external legs on a 60 by 60 grid; row-wise and column-wise searches produce
+  consistent curve points tracing the hyperbolic leading Landau surface.
+- Authored `README.md` in the new problem directory with usage examples,
+  result summaries, and queued integration steps for the unified CLI.
+
+References
+
+- https://arxiv.org/abs/2408.02480
+- https://arxiv.org/abs/2112.09145
+- https://arxiv.org/abs/0712.1851
 ## 2025-10-25
 - Sourced ~/.zprofile and ~/.zshrc to inherit Joe's environment prior to running any CLI tooling.
 - Read RUNBOOK.md Section 4 and the priority list in NOTES.md to confirm focus on the photon photon EFT positivity program; verified the existing `positivity_analysis.wls` stub has not been committed previously.
