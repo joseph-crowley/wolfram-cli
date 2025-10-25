@@ -622,3 +622,15 @@ References
 - https://reference.wolfram.com/language/ref/ImportString.html
 - https://reference.wolfram.com/language/ref/Association.html
 - https://reference.wolfram.com/language/ref/ExportString.html
+
+## 2025-10-25 16:51:21 UTC — Phase 0, Subphase 0.2 Certified quadrature wrappers
+- Implemented  and  in .
+- Wrapper enforces , sets , , , and , and emits JSON-friendly bounds and timing.
+- Added  with three test integrals: Gaussian over the real line, finite Cauchy window [-5,5], and Gamma(3) integral on [0,Infinity].
+- Verification: allWithin=true across 3 cases with seconds per case < 0.03; overall wall under 1 s with external cap  and Python timeout 40 s.
+- Committed and pushed with subphase 0.2 message.
+- Next subphase: 0.3 Primal dual LP scaffolding with certificates.
+
+References
+- https://reference.wolfram.com/language/ref/NIntegrate.html
+- https://reference.wolfram.com/language/ref/TimeConstrained.html
