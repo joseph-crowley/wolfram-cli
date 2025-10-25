@@ -675,3 +675,13 @@ References
 - Verified  usage present in certified quadrature wrapper.
 - Identified many unguarded wolframscript examples in RUNBOOK and READMEs; mitigation deferred to Phase 4.5 where docs are linted and normalized for guards.
 - Phase 0 complete. Next phase: Phase 1 Subphase 1.1 Extend scheme family.
+
+## 2025-10-25 17:08:00 UTC — Phase 1, Subphase 1.1 extend scheme family
+- Extended IR scheme registry with `band_average` and principal-value synonyms. `IntegrationIntervalsForScheme` now supports lists of bands for selective integration windows.
+- Updated `scheme_registry_selftest.wls` to include new scheme; validCount increased to 9, invalidCount remains 6. Execution under CPU cap 10 s and wall cap 15 s.
+- End-to-end multi-scheme JSON export remains to be re-sanitized in later subphases; registry-level execution and validation are complete.
+- Next subphase: 1.2 define admissible heavy spectrum class.
+
+References
+- https://reference.wolfram.com/language/ref/Which.html
+- https://reference.wolfram.com/language/ref/Association.html
