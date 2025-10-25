@@ -713,3 +713,14 @@ References
 - Verification: `python3 scripts/interval_budget_selftest.py > /tmp/interval_budget_selftest.json` returned `status="ok"`; baseline and stress both report `allSchemesWithinTolerance=true` and `baseWithinTolerance=true`.
 - Git: committed `feat(subphase): add interval bounds and selftest harness [phase:1 subphase:1.4]` and pushed to `origin/main`.
 - Next subphase: 1.5 directed counterexample search.
+
+## 2025-10-25 18:36:08 UTC — Phase 1, Subphase 1.5 directed counterexample search
+- Factored the multi-scheme evaluation logic into `lib/PhysicsCLI/MultiScheme.wl` (exporting canonical options, scheme normalisation, certificate aggregation, and JSON sanitisation) and refitted `multi_scheme_ir_bounds.wls` to consume the new module.
+- Authored `problems/positivity-ir-multischeme/multi_scheme_counterexample_search.wls`, implementing seeded global-plus-local heavy spectrum sampling, bounded wall/CPU caps, adaptive interval reuse, and JSON emission with search metadata, best incumbent, and bounded history.
+- Normalised candidate handling to keep internal spectra in raw numeric form while exporting Infinity markers as strings; extended sanitisation paths in both the search script and library to cover `DirectedInfinity` and `Missing`.
+- Re-ran envelope baseline to confirm regression-free integration, then executed the directed search under caps:
+  `ulimit -S -t 180; WSR=/Applications/Wolfram.app/Contents/MacOS/wolframscript; gtimeout 200 "$WSR" -file problems/positivity-ir-multischeme/multi_scheme_counterexample_search.wls --searchTimeCap=75 --maxCandidates=40 > problems/positivity-ir-multischeme/scheme_gap_search.json`
+  producing a counterexample with `spread=1.4723912880007386` and no timeout.
+- Updated `README.md` and `RUNBOOK.md` with the new workflow, execution recipe, and validation checklist; recorded artifact location and review criteria.
+- Artifact: `problems/positivity-ir-multischeme/scheme_gap_search.json`.
+- Next subphase: 1.6 report and packaging.

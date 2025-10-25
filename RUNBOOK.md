@@ -225,6 +225,19 @@ Requires FEM licence. Outputs eigenvalues and sampled modes (PNG export handled 
   `baseline.maxWidth`, `baseline.maxAllowedWidth`, and the matching entries
   for the stressed run. All widths must remain below the allowed envelope and
   the boolean flags should report `true`.
+- **Directed counterexample search**
+  ```sh
+  ulimit -S -t 180
+  WSR=/Applications/Wolfram.app/Contents/MacOS/wolframscript
+  gtimeout 200 "$WSR" \
+    -file \
+    problems/positivity-ir-multischeme/multi_scheme_counterexample_search.wls \
+    --searchTimeCap=75 --maxCandidates=40 \
+    > problems/positivity-ir-multischeme/scheme_gap_search.json
+  ```
+  Review `result.result` (`counterexample` or `non-detection`), the reported
+  `spread`, and ensure `search.timeout` is `false`. Archive the artifact under
+  `problems/positivity-ir-multischeme/` with the accompanying proof outputs.
 
 ---
 

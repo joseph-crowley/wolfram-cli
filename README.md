@@ -104,6 +104,28 @@ All task options follow strict `--key=value` syntax. Numbers are validated again
 - Language policy: this repository is Wolfram Language only for problem solutions and automation; do not add Python or other non-WL sources under `problems/` or `scripts/`. Keep any exploratory code out of version control.
 - For electromagnetic phasor workflows, set $Assumptions for real parameters and apply c = omega/k early. Use ComplexExpand before imposing real-equality constraints.
 
+### IR Positivity Counterexample Search
+
+- Location:
+  `problems/positivity-ir-multischeme/multi_scheme_counterexample_search.wls`.
+- Purpose: directed heavy-spectrum sampling that maximises the spread between
+  analytic, cutoff, exclusion, band-gap, band-average, and principal-value
+  subtraction schemes. Produces either a counterexample or a certified
+  non-detection bound.
+- Run (CPU cap 180 s, wall 200 s):
+  ```sh
+  ulimit -S -t 180
+  WSR=/Applications/Wolfram.app/Contents/MacOS/wolframscript
+  gtimeout 200 "$WSR" \
+    -file \
+    problems/positivity-ir-multischeme/multi_scheme_counterexample_search.wls \
+    --searchTimeCap=75 --maxCandidates=40 \
+    > problems/positivity-ir-multischeme/scheme_gap_search.json
+  ```
+- Output: JSON artifact with `search`, `result`, and bounded history; inspect
+  `result.result` (counterexample vs non-detection), `result.spread`, and verify
+  that `search.timeout` remains `false`.
+
 ## Further Reading
 
 - `RUNBOOK.md` documents installation, kernel discovery, and operational checklists.
