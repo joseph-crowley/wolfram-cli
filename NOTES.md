@@ -572,3 +572,37 @@ References
 - https://reference.wolfram.com/language/ref/FindRoot.html
 - https://reference.wolfram.com/language/ref/Rationalize.html
 - https://reference.wolfram.com/language/ref/Det.html
+
+## 2025-10-25 (Multi-scheme IR comparator)
+- Re-read the approach playbook priority list for item B to confirm the open
+  deliverables: expose multiple subtraction families, report regulator spreads,
+  and surface worst-case positivity bounds under fat-tailed spectra.
+- Compared existing attempts (`positivity-with-light-states`,
+  `massless-positivity-ensemble`) and noted they treat one subtraction scheme
+  at a time without computing bound deltas, spectral losses, or worst-case
+  enforcement across a scheme catalogue.
+- Created `problems/positivity-ir-multischeme` as the dedicated workspace for
+  this new attempt.
+- Authored `multi_scheme_ir_bounds.wls`, modularising argument parsing, heavy
+  spectrum evaluation, scheme interval construction, counterterm accounting,
+  and aggregation of renormalised bounds. Implemented scheme normalisation so
+  JSON rule lists are accepted and added diagnostics for counterterm size,
+  residual drift from the analytic baseline, and heavy spectral loss fractions.
+- Ran the default command
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/positivity-ir-multischeme/multi_scheme_ir_bounds.wls`
+  to produce `multi_scheme_default.json`. Analytic and cutoff schemes agree on
+  a `7.51e-3` bound; excluding everything above `s = 2.0` trims the bound to
+  `7.17e-3` with a `4.5%` spectral loss, while removing the band `[2.0, 2.8]`
+  suppresses the bound to `5.24e-3` after discarding `30.3%` of the spectrum.
+- Executed the tail-stress run
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/positivity-ir-multischeme/multi_scheme_ir_bounds.wls --heavyStrength=2.5 --heavyScale=4.0 --heavyThreshold=1.2 --growthPower=2.8 --tailExponent=6.2 --schemes='[{"scheme":"analytic"},{"scheme":"cutoff","sCut":0.2},{"scheme":"cutoff","sCut":0.12},{"scheme":"excludeBelow","sMin":1.8},{"scheme":"bandGap","sMin":1.8,"sMax":2.6},{"scheme":"bandGap","sMin":2.2,"sMax":3.6}]' --cRen=0.008`
+  capturing `multi_scheme_tailstress.json`. The analytic bound jumps to
+  `4.92e-2`; removing the band `[2.2, 3.6]` halves the bound to `2.73e-2`
+  after eliminating `44.6%` of the spectrum, and all schemes flag the test
+  coefficient `cRen = 8e-3` as violating positivity.
+- Documented methodology, contrasts with earlier single-scheme workflows, and
+  integration follow-ups in `problems/positivity-ir-multischeme/README.md`.
+
+References
+https://reference.wolfram.com/language/ref/NIntegrate.html
+https://arxiv.org

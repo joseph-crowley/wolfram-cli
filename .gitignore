@@ -15,3 +15,4 @@
 !problems/eft-positivity-dispersion/*.json
 !problems/eft-positivity-robust/*.json
 !problems/landau-curve-tracker/*.json
+!problems/positivity-ir-multischeme/*.json
