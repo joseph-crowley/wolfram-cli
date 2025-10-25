@@ -655,3 +655,12 @@ References
 References
 - https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
 - https://github.com/actions/upload-artifact
+
+## 2025-10-25 17:03:00 UTC — Phase 0, Subphase 0.5 macOS non-hanging wrappers
+- Added `scripts/guarded_run.sh` for CPU and wall capped execution. Uses `ulimit -S -t` and `gtimeout`, falling back to a short Python wrapper if coreutils is unavailable.
+- Verified with a trivial echo command; exit codes propagate; timeout results in 124.
+- Next subphase: 0.6 Repo hygiene and docs anchors.
+
+References
+- https://man.archlinux.org/man/ulimit.1
+- https://www.gnu.org/software/coreutils/manual/html_node/timeout-invocation.html
