@@ -645,3 +645,13 @@ References
 References
 - https://reference.wolfram.com/language/ref/LinearOptimization.html
 - https://reference.wolfram.com/language/ref/LinearOptimizationDualityGap.html
+
+## 2025-10-25 17:00:00 UTC — Phase 0, Subphase 0.4 CI harness and timeouts
+- Added `.github/workflows/smoke.yml` running on `macos-latest` with a 12-minute job cap and per-step Python timeouts at 60 s. WL steps are guarded to skip cleanly if `wolframscript` is unavailable on the runner.
+- Workflow uploads `/tmp/quad_selftest.json` and `/tmp/lp_cert_selftest.json` if present with 14-day retention.
+- Local dry-run decisions: no `act` usage; relied on repository-local verification instead. The workflow is minimal and non-hanging by construction.
+- Next subphase: 0.5 macOS non-hanging execution wrappers.
+
+References
+- https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
+- https://github.com/actions/upload-artifact
