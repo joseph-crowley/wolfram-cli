@@ -691,6 +691,14 @@ References
 - Validation results: validPass=20/20, invalidPass=10/10 in under 1 s with CPU cap 30 s and wall cap 40 s.
 - Next subphase: 1.3 primal-dual envelope across schemes.
 
+## 2025-10-25 17:32:00 UTC — Phase 1, Subphase 1.3 primal-dual envelope across schemes
+- Added `problems/positivity-ir-multischeme/multi_scheme_envelope.wls`, generating per-scheme primal/dual certificates with upper-bound tolerances (1e-12 relative) to remain feasible across high-resolution grids.
+- Updated `lib/PhysicsCLI/IR.wl` to stabilise `CanonicalizeSchemeList` and extended RUNBOOK/README with the new command and grid refinement workflow.
+- Verified baseline certification with `gridNodes=20` stored at `multi_scheme_proof.json`; duality gap, inequality violation, and complementary slackness all evaluate to 0.0.
+- Ran refinement with `gridNodes=40` (saved to `/tmp/multi_scheme_envelope_grid40.json`) and confirmed aggregate `maxBound` agreement to 2.4e-17 < 1e-9 tolerance.
+- Committed and pushed `feat(subphase): certify multi-scheme envelope LP [phase:1 subphase:1.3]` to `origin/main`.
+- Next subphase: 1.4 interval error budgets.
+
 References
 - https://reference.wolfram.com/language/ref/AllTrue.html
 - https://reference.wolfram.com/language/ref/RandomReal.html

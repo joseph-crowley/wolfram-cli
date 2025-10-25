@@ -76,12 +76,35 @@
   corrections even though the renormalised bound should match the analytic
   baseline.
 
+## Certified Envelope
+- Generate a primal-dual certificate for the multi-scheme envelope:
+  ```
+  scripts/guarded_run.sh 60 90 -- /Applications/Wolfram.app/Contents/MacOS/wolframscript \
+    -file problems/positivity-ir-multischeme/multi_scheme_envelope.wls \
+    --gridNodes=20 \
+    > problems/positivity-ir-multischeme/multi_scheme_proof.json
+  ```
+  Expected outputs: `aggregate.consistentWithAnalytic = true`, `dual.dualityGap <= 1e-9`,
+  `kkt.equalityResidual <= 1e-9`, and `kkt.inequalityViolation <= 1e-9`.
+- Refine the grid to validate stability:
+  ```
+  scripts/guarded_run.sh 90 120 -- /Applications/Wolfram.app/Contents/MacOS/wolframscript \
+    -file problems/positivity-ir-multischeme/multi_scheme_envelope.wls \
+    --gridNodes=40 \
+    > /tmp/multi_scheme_envelope_grid40.json
+  ```
+  Ensure the change in `aggregate.maxBound` between the baseline and refinement
+  runs remains below the `certificateTolerance` (default `1e-9`).
+
 ## Files
 - `multi_scheme_ir_bounds.wls` — CLI implementation delivering multi-scheme
   dispersion bounds and diagnostics.
+- `multi_scheme_envelope.wls` — primal-dual LP that certifies the worst-case
+  bound across schemes and emits KKT diagnostics.
 - `multi_scheme_default.json` — baseline comparison across default schemes.
 - `multi_scheme_tailstress.json` — heavy-tail stress test with custom schemes
   and a failing candidate coefficient.
+- `multi_scheme_proof.json` — certified envelope artifact (gridNodes=20).
 
 ## Next Steps
 - Integrate the comparator into `physics_cli.wls` so CI can enforce the

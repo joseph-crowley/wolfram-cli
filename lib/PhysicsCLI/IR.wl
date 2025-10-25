@@ -96,13 +96,15 @@ CanonicalizeScheme[input_] := Module[{assoc = toAssoc[input], name, spec, check}
 
 ValidateScheme[input_] := CanonicalizeScheme[input];
 
-CanonicalizeSchemeList[list_List] := Module[{results, valids},
+CanonicalizeSchemeList[list_List] := Module[{results, valids, validCanonical, invalids},
   results = CanonicalizeScheme /@ list;
   valids = Select[results, TrueQ[#"Valid"] &];
+  validCanonical = Lookup[#, "Canonical"] & /@ valids;
+  invalids = Select[results, !TrueQ[#"Valid"] &];
   <|
     "All" -> results,
-    "Valid" -> Lookup[#, "Canonical"] & /@ valids,
-    "Invalid" -> Select[results, !TrueQ[#"Valid"] &]
+    "Valid" -> validCanonical,
+    "Invalid" -> invalids
   |>
 ];
 

@@ -197,6 +197,27 @@ wolframscript -file physics_cli.wls --task=stadium-billiard \
 ```
 Requires FEM licence. Outputs eigenvalues and sampled modes (PNG export handled by wrapper). For cost control, run on licensed machines only.
 
+### 4.7 IR Positivity Envelope
+- **Primal-dual certification**
+  ```sh
+  scripts/guarded_run.sh 60 90 -- /Applications/Wolfram.app/Contents/MacOS/wolframscript \
+    -file problems/positivity-ir-multischeme/multi_scheme_envelope.wls \
+    --gridNodes=20 \
+    > problems/positivity-ir-multischeme/multi_scheme_proof.json
+  ```
+  Inspect `aggregate.consistentWithAnalytic` and confirm `dual.dualityGap`, `kkt.equalityResidual`, and `kkt.inequalityViolation` stay ≤ `1e-9`.
+- **Grid refinement check**
+  ```sh
+  scripts/guarded_run.sh 90 120 -- /Applications/Wolfram.app/Contents/MacOS/wolframscript \
+    -file problems/positivity-ir-multischeme/multi_scheme_envelope.wls \
+    --gridNodes=40 \
+    > /tmp/multi_scheme_envelope_grid40.json
+  ```
+  Compare the reported `aggregate.maxBound` between grid sizes; the change must be below `certificateTolerance` (`1e-9` by default).
+- **Artifacts**
+  - Store primary proof under `problems/positivity-ir-multischeme/`.
+  - Keep refinement runs under `/tmp/` or purge after validation to avoid repository bloat.
+
 ---
 
 ## 5. Automation and CI Hooks
