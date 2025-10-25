@@ -12,6 +12,8 @@
 *)
 
 SetDirectory[DirectoryName[$InputFileName]];
+(* Load IR package via relative path to repo root. *)
+Get[FileNameJoin[{"..", "..", "lib", "PhysicsCLI", "IR.wl"}]];
 
 $Assumptions = {
   Element[s, Reals], s >= 0
@@ -59,12 +61,7 @@ parseList[val_List] := DeleteCases[N /@ val, _Missing];
 parseList[_Missing] := {};
 parseList[_] := {};
 
-ClearAll[normalizeScheme];
-normalizeScheme[spec_] := Which[
-  AssociationQ[spec], spec,
-  MatchQ[spec, {_Rule ..}], Association[spec],
-  True, <||>
-];
+(* Scheme normalization and validation is provided by PhysicsCLI`IR`. *)
 
 ClearAll[defaultSchemes];
 defaultSchemes[] := {
@@ -151,40 +148,7 @@ heavyIntegrandFunction[opts_Association, subtractions_Integer] := Module[
   ]
 ];
 
-ClearAll[integrationIntervals];
-integrationIntervals[spec_Association, opts_Association] := Module[
-  {scheme = ToLowerCase[ToString[Lookup[spec, "scheme", ""]]],
-   threshold = N[opts["heavyThreshold"]],
-   upper = opts["integrationMax"], sMin, sMax},
-  Switch[scheme,
-    "analytic" | "cutoff",
-      {{threshold, upper}},
-    "excludebelow",
-      sMin = N[Lookup[spec, "sMin", Missing["Invalid"]]];
-      If[!NumericQ[sMin],
-        Return[Missing["InvalidScheme", "sMin required for excludeBelow."]]
-      ];
-      {{Max[threshold, sMin], upper}},
-    "bandgap",
-      sMin = N[Lookup[spec, "sMin", Missing["Invalid"]]];
-      sMax = N[Lookup[spec, "sMax", Missing["Invalid"]]];
-      If[!NumericQ[sMin] || !NumericQ[sMax],
-        Return[Missing["InvalidScheme", "sMin and sMax required for bandGap."]]
-      ];
-      If[sMax <= sMin,
-        Return[Missing["InvalidScheme", "Require sMax > sMin for bandGap."]]
-      ];
-      If[sMax <= threshold,
-        {{threshold, upper}},
-        If[sMin <= threshold,
-          {{threshold, sMax}, {Max[sMax, threshold], upper}},
-          {{threshold, sMin}, {sMax, upper}}
-        ]
-      ],
-    _,
-      Missing["InvalidScheme", "Unsupported scheme."]
-  ]
-];
+(* Integration intervals now delegated to the IR module. *)
 
 ClearAll[integrateIntervals];
 integrateIntervals[integrand_, intervals_List, opts_Association] := Module[
@@ -213,25 +177,7 @@ integrateIntervals[integrand_, intervals_List, opts_Association] := Module[
   sum
 ];
 
-ClearAll[masslessCounterterm];
-masslessCounterterm[spec_Association, prefactor_, opts_Association] := Module[
-  {scheme = ToLowerCase[ToString[Lookup[spec, "scheme", ""]]],
-   pole = N[opts["poleStrength"]]},
-  Which[
-    !NumericQ[prefactor], Missing["Unsupported"],
-    scheme === "cutoff",
-      Module[{sCut = N[Lookup[spec, "sCut", Missing["Invalid"]]]},
-        If[!NumericQ[sCut] || sCut <= 0,
-          Missing["InvalidScheme", "Positive sCut required for cutoff."],
-          prefactor*pole/(3.*sCut^3)
-        ]
-      ],
-    scheme === "analytic",
-      0.,
-    True,
-      0.
-  ]
-];
+(* Counterterm computation also delegated to the IR module. *)
 
 ClearAll[lossFraction];
 lossFraction[integral_, base_] := Module[
@@ -247,7 +193,7 @@ evaluateScheme[spec_Association, integrand_, opts_Association,
     subtractions_Integer, prefactor_, baseIntegral_, baseBound_] := Module[
   {intervals, integral, counterterm, bound, heavyContribution, residual,
    loss, schemeName, status = "ok", message = ""},
-  intervals = integrationIntervals[spec, opts];
+  intervals = PhysicsCLI`IR`IntegrationIntervalsForScheme[spec, opts];
   If[Head[intervals] === Missing,
     status = "error";
     message = If[Length[List @@ intervals] >= 2,
@@ -272,7 +218,7 @@ evaluateScheme[spec_Association, integrand_, opts_Association,
   ];
   heavyContribution = prefactor*integral;
   bound = heavyContribution/2.;
-  counterterm = masslessCounterterm[spec, prefactor, opts];
+  counterterm = PhysicsCLI`IR`CountertermForScheme[spec, prefactor, opts];
   residual = bound - baseBound;
   loss = lossFraction[integral, baseIntegral];
   schemeName = ToString[Lookup[spec, "scheme", "unknown"]];
@@ -356,16 +302,13 @@ userEvaluator[cRen_, schemeResults_List] := Module[
   |>
 ];
 
-ClearAll[sanitize];
-sanitize[val_] := Which[
-  val === Infinity, "Infinity",
-  val === -Infinity, "-Infinity",
-  NumericQ[val], N[val, 16],
-  True, val
-];
-
-ClearAll[sanitizeAll];
-sanitizeAll[expr_] := Map[sanitize, expr, {0, Infinity}];
+ClearAll[SanitizeJSON];
+SanitizeJSON[assoc_Association] := AssociationMap[SanitizeJSON, assoc];
+SanitizeJSON[list_List] := SanitizeJSON /@ list;
+SanitizeJSON[val_] /; val === Infinity := "Infinity";
+SanitizeJSON[val_] /; val === -Infinity := "-Infinity";
+SanitizeJSON[val_] /; NumericQ[val] := N[val, 16];
+SanitizeJSON[other_] := other;
 
 ClearAll[main];
 main[] := Module[
@@ -378,8 +321,10 @@ main[] := Module[
     schemes = opts["schemes"];
     If[!ListQ[schemes], schemes = defaultSchemes[]]
   ];
-  schemes = Select[normalizeScheme /@ schemes, AssociationQ];
-  If[schemes === {}, schemes = defaultSchemes[]];
+  (* Canonicalize and validate schemes via registry; keep only valid ones. *)
+  schemes = Module[{res = PhysicsCLI`IR`CanonicalizeSchemeList[schemes]},
+    If[Lookup[res, "Valid", {}] === {}, defaultSchemes[], Lookup[res, "Valid", {}]]
+  ];
   validity = validateOptions[opts];
   If[!validity["valid"],
     Print[ExportString[
@@ -442,7 +387,7 @@ main[] := Module[
     "aggregate" -> aggregate,
     "userCoefficient" -> userReport
   |>;
-  Print[ExportString[sanitizeAll[payload], "JSON", "Compact" -> True]];
+  Print[ExportString[SanitizeJSON[payload], "JSON", "Compact" -> True]];
 ];
 
 main[];
