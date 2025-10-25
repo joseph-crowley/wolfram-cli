@@ -219,6 +219,17 @@ Requires FEM licence. Outputs eigenvalues and sampled modes (PNG export handled 
 
 ---
 
+## 6. Non-hanging Execution Wrappers
+
+- Use `scripts/guarded_run.sh <cpu_sec> <wall_sec> -- <cmd> ...` to enforce CPU and wall caps for any command.
+- Example:
+  ```sh
+  scripts/guarded_run.sh 30 40 -- /Applications/Wolfram.app/Contents/MacOS/wolframscript -file scripts/quadrature_selftest.wls
+  scripts/guarded_run.sh 30 40 -- /Applications/Wolfram.app/Contents/MacOS/wolframscript -file scripts/lp_cert_selftest.wls
+  ```
+- Exit code 124 denotes a wall-time timeout. CPU cap is soft and enforced via `ulimit -S -t`.
+
+
 ## 6. Performance, Accuracy, and Cost Management
 
 | Task | Tunable knobs | Guidance |
