@@ -411,6 +411,27 @@ Implementation hygiene to follow later
 - High precision defaults with explicit trade offs; residual gates in CI.
 - Headless plots and JSON only; no notebooks in version control.
 
+## 2025-10-25 (IR subtraction pilot)
+- Created `problems/positivity-with-light-states` to launch the first in-repo
+  attempt on the massless exchange extension of the positivity program.
+- Authored `ir_subtracted_positivity.wls` with 60 digit quadrature, hardened
+  CLI parsing, and explicit handling of cutoff versus analytic pole
+  subtraction. The heavy spectrum is a thresholded power law with tempering to
+  keep the twice-subtracted kernel integrable while preserving fat tails.
+- Ran
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/positivity-with-light-states/ir_subtracted_positivity.wls --cRen=0.01`
+  and captured `summary_default.json`; the heavy integral `2.36e-2` produced a
+  bound `7.51e-3`, leaving a safety margin `2.49e-3` for the supplied
+  coefficient.
+- Ran
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/positivity-with-light-states/ir_subtracted_positivity.wls --cRen=0.004 --heavyStrength=2.5 --heavyScale=4.0 --heavyThreshold=1.2 --growthPower=2.8 --tailExponent=6.2 --sCuts='[0.15,0.3,0.6]' --irSamples='[0.15,0.07,0.03]'`
+  and stored `summary_tail_heavy.json`; the heavier tail amplified the bound to
+  `4.92e-2` and flagged the coefficient as violating positivity.
+- Confirmed the divergence table shows the cubic blow up of the unsubtracted
+  pole, while the analytic counterterm zeroes the massless contribution exactly
+  across all regulators, demonstrating the subtraction scheme independence of
+  the renormalised bound.
+
 References
 
 - https://www.wolfram.com/wolframscript/
