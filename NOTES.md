@@ -495,3 +495,19 @@ References
 - https://reference.wolfram.com/language/ref/NIntegrate.html
 - https://reference.wolfram.com/language/ref/WorkingPrecision.html
 - https://reference.wolfram.com/language/ref/ParetoDistribution.html.en
+
+## 2025-10-25 (Landau classification pilot)
+- Re-read the approach playbook priority item C and selected it for a fresh attempt that augments the existing determinant scan with Landau parameter diagnostics.
+- Differentiation from the prior mapper (2025-10-25 Landau CLI integration): this pilot focuses on extracting the null eigenvectors of the Cayley matrix at each detected root, classifying solutions by positivity of the Landau parameters, and quantifying derivative slopes to flag degenerate zero crossings.
+- Sketched deliverables: dedicated problem directory under `problems/landau-classifier-leading`, a Wolfram CLI script that wraps the shared parsing utilities yet adds classification logic, JSON artefacts covering triangle and box test cases with alpha-vectors and gradient magnitudes, and a README describing the methodology and resilience checks for fat-tailed scans.
+- Confirmed the runbook requirements still hold (ASCII outputs, wl-only implementation, deterministic seeds) and noted that the new classifier must remain numerically stable near pinch surfaces where determinants become ill-conditioned.
+- Drafted validation plan: reuse the previous root scan grids, cross-check alpha positivity against analytic expectations for equal-mass cases, and stress the classifier on near-degenerate configurations to ensure it either reports edge degeneracy or raises a diagnostic instead of mislabelling the singularity.
+- Authored `problems/landau-classifier-leading/landau_classifier.wls`, binding the shared `PhysicsCLI` parsing spec, SVD null-vector extraction, determinant slope diagnostics, and an auxiliary bracketed root finder to stabilise candidate generation when Cayley matrices become nearly singular.
+- Verified the triangle workflow via `wolframscript -file problems/landau-classifier-leading/landau_classifier.wls --topology=triangle --internalMasses='[0.7,0.8,0.9]' --externalSquares='[1.0,1.0,4.0]' --scanIndex=3 --scanRange='[0.1,6.0,200]' --workingPrecision=100 > problems/landau-classifier-leading/triangle_classification.json`, obtaining a single root at `s≈2.4431` with zero derivative, tiny residual `5.0e-13`, and a sign-indefinite alpha vector that confirms the forward Landau surface is not fully leading for that mass set.
+- Evaluated the equal-mass box case at the known singular point using `wolframscript -file problems/landau-classifier-leading/landau_classifier.wls --topology=box --internalMasses='[0.5,0.5,0.5,0.5]' --externalSquares='[0,0,0,0]' --sRange='[0.1,5.0,80]' --tRange='[0.1,5.0,80]' --s=2.0 --t=2.0 --workingPrecision=120 > problems/landau-classifier-leading/box_classification.json`, which returned a `leading-positive` classification with symmetric simplex alphas and matched analytic gradients `(∂det/∂s, ∂det/∂t) = (4,4)`.
+- Noted that the grid-based candidate harvester respects signed brackets but equal-mass configurations exhibit extended zero manifolds anchored at `s=0`, so automatic curve extraction still relies on user-specified evaluation points for now; documented this limitation in the README for follow-up refinement.
+
+References
+
+- https://arxiv.org/abs/2203.08211
+- https://arxiv.org/abs/2210.04675

@@ -9,3 +9,6 @@
 
 # Wolfram notebooks (skip unless explicitly needed)
 *.nb
+
+# Persist classifier outputs
+!problems/landau-classifier-leading/*.json
