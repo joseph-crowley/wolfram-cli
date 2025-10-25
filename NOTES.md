@@ -458,6 +458,42 @@ Implementation hygiene to follow later
   `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/positivity-with-light-states/ir_subtracted_positivity.wls --cRen=0.004 --heavyStrength=2.5 --heavyScale=4.0 --heavyThreshold=1.2 --growthPower=2.8 --tailExponent=6.2 --sCuts='[0.15,0.3,0.6]' --irSamples='[0.15,0.07,0.03]'`
   and stored `summary_tail_heavy.json`; the heavier tail amplified the bound to
   `4.92e-2` and flagged the coefficient as violating positivity.
+
+## 2025-10-25 (Robust photon positivity LP)
+- Re-read `RUNBOOK.md` and the approach playbook section in `NOTES.md`
+  to confirm priority problem A requirements and to catalogue prior
+  treatments (`problems/eft-positivity-photon-photon`, `problems/eft-positivity-dispersion`).
+- Initial attempt to run `wolframscript` via `zsh -lc '... wolframscript ...'`
+  failed with `command not found`; switched to the absolute path
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript` per runbook guidance.
+- Created `problems/eft-positivity-robust` and implemented
+  `robust_positivity_lp.wls`, which formulates Pareto-capped spectral
+  distributions as decision variables and solves the extremal `a1`, `a2`
+  problems through linear programs expressed with `NMinimize`.
+  The new workflow differs from earlier attempts by optimising over entire
+  fat-tailed ensembles instead of evaluating fixed spectra, exposing worst-case
+  Wilson coefficients under bounded moment uncertainty.
+- Generated baseline bounds with
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/eft-positivity-robust/robust_positivity_lp.wls > problems/eft-positivity-robust/bounds_default.json`;
+  observed that minimisers saturate 17 Pareto caps near `1.05 GeV`, while
+  maximisers concentrate weight at `0.7 GeV`, expanding `a1` up to `2.39e2`.
+- Executed a shallow-tail stress test via
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/eft-positivity-robust/robust_positivity_lp.wls --tailExponent=2.1 --capMultiplier=1.2 --massMax=150 --rho2Total=3.0 --evenTotal=0.8 > problems/eft-positivity-robust/bounds_shallow_tail.json`,
+  confirming narrower bounds (`a1` confined between `1.27e2` and `1.86e2`) and
+  full cap saturation across the interior grid.
+- Ran a high-total, tight-tail scenario with
+  `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/eft-positivity-robust/robust_positivity_lp.wls --tailExponent=4.5 --capMultiplier=3.0 --rho1Total=2.0 --rho2Total=2.5 --oddTotal=0.6 > problems/eft-positivity-robust/bounds_tight_tail.json`,
+  showing that expanded totals widen the feasible region (`a1` reaching
+  `2.99e2`) and that lower bounds still cling to the Pareto caps.
+- Documented the methodology, differences from prior work, and usage patterns
+  in `problems/eft-positivity-robust/README.md`, emphasising the convex
+  optimisation perspective and the resilience diagnostics emitted per run.
+- Consulted the current Wolfram documentation for `LinearOptimization` and
+  `NMinimize` to ensure solver semantics aligned with the automated CLI flow.
+
+References
+- https://reference.wolfram.com/language/ref/LinearOptimization.html
+- https://reference.wolfram.com/language/ref/NMinimize.html
 - Confirmed the divergence table shows the cubic blow up of the unsubtracted
   pole, while the analytic counterterm zeroes the massless contribution exactly
   across all regulators, demonstrating the subtraction scheme independence of
