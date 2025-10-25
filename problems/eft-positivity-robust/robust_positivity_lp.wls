@@ -201,31 +201,75 @@ linearProgramData[opts_Association] := Module[
 ];
 
 solveObjective[data_Association, coeffVec_List, tag_] := Module[
-  {vars = data["vars"]["all"], objectiveVec, res, value, rules, solution,
-   metrics, reportedValue},
+  {vars = data["vars"]["all"], objectiveVec, res, primal, pmin, dmax, dual,
+   gap, metrics, ineqs, eqs, mu, nu, eqResidual, ineqViolation, compSlack,
+   constraints = data["constraints"], reportedValue},
   objectiveVec = SetPrecision[coeffVec, data["precision"]];
-  res = Check[
-    NMinimize[
-      {objectiveVec.vars, data["constraints"]},
-      vars
+  res = Quiet@Check[
+    LinearOptimization[
+      objectiveVec.vars,
+      constraints,
+      vars,
+      {"PrimalMinimizer", "PrimalMinimumValue", "DualMaximumValue",
+       "DualMaximizer", "DualityGap"}
     ],
     $Failed
   ];
-  If[res === $Failed || !MatchQ[res, {_?NumericQ, {__Rule}}],
-    Return[<|"status" -> "error", "tag" -> tag, "message" -> "Linear program infeasible."|>]
+  If[res === $Failed || !MatchQ[res, {{__?NumericQ}, _?NumericQ, _?NumericQ, {__List}, _?NumericQ}],
+    Return[<|"status" -> "error", "tag" -> tag, "message" -> "Linear program failed."|>]
   ];
-  {value, rules} = res;
-  solution = vars /. rules;
+  {primal, pmin, dmax, dual, gap} = res;
   reportedValue = If[Lookup[tag, "sense", "minimize"] === "maximize",
-    -N[value],
-    N[value]
+    -N[pmin],
+    N[pmin]
   ];
-  metrics = summarizeResults[data, solution];
+  metrics = summarizeResults[data, primal];
+  (* Split constraints by type to align with dual multipliers structure {ineq, eq} *)
+  eqs = Select[constraints, Head[#] === Equal &];
+  ineqs = Select[constraints, Or[Head[#] === LessEqual, Head[#] === GreaterEqual] &];
+  mu = If[Length[dual] >= 1 && ListQ[dual[[1]]], N[dual[[1]]], {}];
+  nu = If[Length[dual] >= 2 && ListQ[dual[[2]]], N[dual[[2]]], {}];
+  eqResidual = If[eqs === {}, 0., Module[{resList},
+      resList = ((# /. Thread[vars -> primal]) /. (lhs_ == rhs_) :> (N[lhs - rhs])) & /@ eqs;
+      Max[Abs /@ resList]
+    ]
+  ];
+  ineqViolation = If[ineqs === {}, 0., Max[
+    With[{val = (# /. Thread[vars -> primal])},
+      Which[
+        Head[val] === LessEqual, N[Max[0., (val[[1]] - val[[2]])]],
+        Head[val] === GreaterEqual, N[Max[0., (val[[2]] - val[[1]])]],
+        True, 0.
+      ]
+    ] & /@ ineqs
+  ]];
+  compSlack = If[ineqs === {} || mu === {}, 0.,
+    Module[{slacks},
+      slacks = With[{val = (# /. Thread[vars -> primal])},
+          Which[
+            Head[val] === LessEqual, N[Max[0., (val[[2]] - val[[1]])]],
+            Head[val] === GreaterEqual, N[Max[0., (val[[1]] - val[[2]])]],
+            True, 0.
+          ]
+        ] & /@ ineqs;
+      Max[Abs[mu*slacks]]
+    ]
+  ];
   Association[
     <|
       "status" -> "ok",
       "tag" -> tag,
-      "objectiveValue" -> reportedValue
+      "objectiveValue" -> reportedValue,
+      "certificate" -> <|
+        "primalMinimum" -> N[pmin],
+        "dualMaximum" -> N[dmax],
+        "dualityGap" -> N[gap],
+        "kkt" -> <|
+          "equalityResidual" -> eqResidual,
+          "inequalityViolation" -> ineqViolation,
+          "complementarySlackness" -> compSlack
+        |>
+      |>
     |>,
     metrics
   ]
