@@ -669,3 +669,9 @@ References
 - Added non-hanging wrapper usage section to RUNBOOK. Left heavy artifact directories out of version control as before; existing `.gitignore` remains sufficient for current file set.
 - Tree is clean after smoke and selftests; no oversized binaries detected in `git ls-files`.
 - Next subphase: 0.7 Blocking risk audit of existing scripts.
+
+## 2025-10-25 16:57:40 UTC — Phase 0, Subphase 0.7 risk audit
+- Scanned repository for  without : 4 occurrences found; all guarded with explicit .
+- Verified  usage present in certified quadrature wrapper.
+- Identified many unguarded wolframscript examples in RUNBOOK and READMEs; mitigation deferred to Phase 4.5 where docs are linted and normalized for guards.
+- Phase 0 complete. Next phase: Phase 1 Subphase 1.1 Extend scheme family.
