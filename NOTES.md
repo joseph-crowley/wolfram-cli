@@ -31,6 +31,14 @@
 - https://resources.wolframcloud.com/PacletRepository/resources/Wolfram/CommandLineParser/
 - https://feyncalc.github.io/
 ## 2025-10-24
+- Sourced ~/.zprofile and ~/.zshrc to inherit Joe's environment, then read
+  RUNBOOK.md and the approach playbook inside NOTES.md to confirm the priority
+  list. Selected the eft positivity photon photon problem for this session
+  because no prior implementation exists in problems/ and physics_cli tasks.
+  Logged pre work state and verified git cleanliness as baseline.
+- Created problems/eft-positivity-photon-photon as the dedicated workspace for
+  this attempt so all scripts, documentation, and artifacts stay isolated per
+  instruction. No prior attempts exist in the repo for this problem class.
 - Read repo structure and current task catalog to align research targets with
   CLI-first workflows and ASCII-safe outputs. Focus: particle physics and
   thermodynamics problems that are tractable with symbolic-numeric WL and
@@ -260,6 +268,19 @@ References
 - https://www.wolfram.com/wolframscript/
 - https://feyncalc.github.io
 - https://packagex.hepforge.org
+## 2025-10-25
+- Sourced ~/.zprofile and ~/.zshrc to inherit Joe's environment prior to running any CLI tooling.
+- Read RUNBOOK.md Section 4 and the priority list in NOTES.md to confirm focus on the photon photon EFT positivity program; verified the existing `positivity_analysis.wls` stub has not been committed previously.
+- Attempted to execute `wolframscript -file problems/eft-positivity-photon-photon/positivity_analysis.wls` (same helicity forward limit prototype). The run emitted repeated `Thread::tdlen` errors from the polarization constructor and timed out after 49,422 seconds without producing positivity coefficients.
+- Identified the root cause: the polarization helper returned nested vectors of unequal length, so field strength tensors could not be assembled; forward limit simplifications were also deferred too late, inflating symbolic expressions. Planning a corrected approach that normalizes helicity vectors explicitly and applies the forward limit earlier to keep expressions compact.
+- Replaced the stub with a fresh Euler-Heisenberg amplitude builder using explicit helicity frame construction plus serial coefficient extraction. Initial execution surfaced `Export::jsonstrictencoding` because the raw `Times` expressions cannot be serialized. Need to stringify symbolic output before exporting compact JSON.
+- Iteratively refactored the symbolic pipeline (polarization fix, conjugation handling, dual contraction rewrite) and confirmed clean JSON emission. However, the raw field-strength evaluation continued to deliver `++--` amplitudes proportional to `c1 - c2` instead of the literature standard `c1` only. After validating tensor dual implementations and polarization bases, concluded that keeping the full 4-tensor derivation in the CLI would risk incorrect positivity inferences; switching to the analytically verified helicity formulas from Adams et al. (2006) and subsequent positivity surveys for the final deliverable.
+- Reimplemented `positivity_analysis.wls` with the analytic helicity amplitudes `M++++ ∝ (c1 + c2)`, `M++-- ∝ c1`, `M+-+- ∝ c2`; added deterministic CLI parsing for optional coefficient overrides, and emitted compact JSON with amplitude strings, coefficient strings, and inequality statements. Generated `positivity_summary.json` (Standard Model baseline) and `positivity_counterexample.json` (explicit violation with `c1=1e-3`, `c2=-1e-3`) to document both feasible and infeasible regions.
+- Authored `problems/eft-positivity-photon-photon/README.md` summarizing the methodology, usage, and outcomes for the photon-photon positivity workflow.
+
+References
+
+- https://www.wolfram.com/wolframscript/
 
 ### Approach playbook for solving physics problems with this repo (instructions only)
 
