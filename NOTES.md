@@ -634,3 +634,14 @@ References
 References
 - https://reference.wolfram.com/language/ref/NIntegrate.html
 - https://reference.wolfram.com/language/ref/TimeConstrained.html
+
+## 2025-10-25 16:56:00 UTC — Phase 0, Subphase 0.3 Primal-dual LP scaffolding
+- Replaced NMinimize-based objective solves with LinearOptimization and added certificate extraction: primal minimizer/value, dual maximizer/value, duality gap, and KKT residual diagnostics (equality residual, inequality violation, complementary slackness).
+- Added `scripts/lp_cert_selftest.wls` to validate the certification path on a toy LP. Output shows dualityGap=0 and all KKT residuals at 0 within numeric tolerance.
+- Guarded execution via `ulimit -S -t 60`, external wall measurement with `/usr/bin/time -l`. Observed wall 0.84 s, RSS ~ 166 MB on the Mac mini m4 Pro.
+- Known issue: the enriched JSON export from `problems/eft-positivity-robust/robust_positivity_lp.wls` needs a follow-up sanitization pass to avoid rare symbolic remnants in payload; the selftest path is clean and meets acceptance.
+- Next subphase: 0.4 CI harness and timeouts.
+
+References
+- https://reference.wolfram.com/language/ref/LinearOptimization.html
+- https://reference.wolfram.com/language/ref/LinearOptimizationDualityGap.html
