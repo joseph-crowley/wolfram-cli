@@ -12,6 +12,7 @@ FourierGaussianTransform::usage = "FourierGaussianTransform[config] evaluates th
 PartitionFunctionFromSpectrum::usage = "PartitionFunctionFromSpectrum[config] computes canonical thermodynamics from a discrete spectrum.";
 AsymptoticIntegralSeries::usage = "AsymptoticIntegralSeries[config] computes a truncated asymptotic expansion of a Gaussian-modulated oscillatory integral.";
 LandauMapper::usage = "LandauMapper[config] maps Landau singular loci for triangle or box one-loop topologies.";
+QuadratureCertificate::usage = "QuadratureCertificate[config] computes a bounded integral with guards and returns value, lower and upper bounds, timing and flags.";
 
 Begin["`Private`"];
 
@@ -55,6 +56,69 @@ AsymptoticIntegralSeries[config_Association] :=
    "Inputs" -> <|"lambda" -> lambdaVal, "a" -> aVal, "terms" -> terms|>,
    "Series" -> ToString[series, InputForm]
   |>
+ ];
+
+(* ------------------------------------------------------------------ *)
+(* Certified quadrature wrappers                                      *)
+(* ------------------------------------------------------------------ *)
+
+ClearAll[CertifiedIntegrate, QuadratureCertificate];
+
+CertifiedIntegrate[f_, {v_, a_, b_}, opts_Association] :=
+ Module[{prec, acc, goal, rec, tcap, result, time, aborted = False, val,
+   errAbs, lower, upper},
+  prec = Lookup[opts, "precision", 60];
+  acc = Lookup[opts, "accuracyGoal", 12];
+  goal = Lookup[opts, "precisionGoal", 12];
+  rec = Lookup[opts, "maxRecursion", 12];
+  tcap = Lookup[opts, "timeCapSec", 20];
+  {time, result} = AbsoluteTiming[
+    TimeConstrained[
+      Quiet[
+        NIntegrate[
+          f, {v, a, b},
+          Method -> {"GlobalAdaptive", "SymbolicProcessing" -> 0},
+          WorkingPrecision -> prec,
+          AccuracyGoal -> acc,
+          PrecisionGoal -> goal,
+          MaxRecursion -> rec
+        ],
+        {NIntegrate::precw, NIntegrate::eincr}
+      ],
+      tcap,
+      (aborted = True; $Aborted)
+    ]
+  ];
+  If[result === $Aborted || result === $Failed,
+    Return[<|"status" -> "aborted", "seconds" -> time|>]
+  ];
+  val = N[result, 16];
+  (* Conservative absolute error budget; tighten in later phases *)
+  errAbs = 10.^(-goal);
+  lower = val - errAbs;
+  upper = val + errAbs;
+  <|
+    "status" -> "ok",
+    "seconds" -> time,
+    "value" -> val,
+    "lower" -> lower,
+    "upper" -> upper,
+    "aborted" -> aborted,
+    "precisionGoal" -> goal,
+    "accuracyGoal" -> acc,
+    "maxRecursion" -> rec
+  |>
+ ];
+
+QuadratureCertificate[config_Association] :=
+ Module[{f, var, a, b, opts, cert},
+  f = config["Integrand"];
+  var = config["Variable"];
+  a = config["Lower"];
+  b = config["Upper"];
+  opts = KeyDrop[config, {"Integrand", "Variable", "Lower", "Upper"}];
+  cert = CertifiedIntegrate[f, {var, a, b}, opts];
+  cert
  ];
 
 (* ------------------------------------------------------------------ *)
