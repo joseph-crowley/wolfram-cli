@@ -14,3 +14,4 @@
 !problems/landau-classifier-leading/*.json
 !problems/eft-positivity-dispersion/*.json
 !problems/eft-positivity-robust/*.json
+!problems/landau-curve-tracker/*.json

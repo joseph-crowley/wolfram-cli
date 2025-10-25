@@ -559,3 +559,16 @@ References
 
 - https://arxiv.org/abs/2210.04675
 - https://en.wikipedia.org/wiki/Euler%E2%80%93Heisenberg_Lagrangian
+
+## 2025-10-25 (Landau curve tracker)
+- Sourced `~/.zprofile` and `~/.zshrc`, reviewed the approach playbook priority list, and selected priority C for a new attempt that targets continuous Landau surface extraction instead of pointwise classification.
+- Created `problems/landau-curve-tracker`, implemented `landau_curve_tracker.wls`, and replaced the earlier continuation strategy with a rationalised secant predictor-corrector that advances via successive `FindRoot` solves under guarded slope denominators.
+- Differentiated this workflow from `landau-classifier-leading` by tracking both forward and backward arcs in one invocation, logging slope and gradient evolution per point, and terminating gracefully when the implicit derivative threshold is reached, exposing fat-tailed pinch regions.
+- Generated `box_equal_mass_curve.json` (parameterising t as a function of s across s in [0.2,4.0]) and `box_equal_mass_curve_tparam.json` (parameterising s in terms of t), each with residuals below `3e-15`, monotonic slope flattening, and explicit derivative guards near the branch locus.
+- Recorded methodology, usage examples, output schema, and resilience considerations in `problems/landau-curve-tracker/README.md` to accompany the existing mapper and classifier deliverables.
+
+References
+
+- https://reference.wolfram.com/language/ref/FindRoot.html
+- https://reference.wolfram.com/language/ref/Rationalize.html
+- https://reference.wolfram.com/language/ref/Det.html
