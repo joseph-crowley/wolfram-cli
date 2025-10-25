@@ -685,3 +685,12 @@ References
 References
 - https://reference.wolfram.com/language/ref/Which.html
 - https://reference.wolfram.com/language/ref/Association.html
+
+## 2025-10-25 17:11:00 UTC — Phase 1, Subphase 1.2 admissible heavy spectrum class
+- Implemented a validator self-test `scripts/spectrum_validator_selftest.wls` that encodes basic admissibility: positive threshold, non-negative growth power, tail exponent strictly exceeding growth power by more than 2, and non-negative weights. 
+- Validation results: validPass=20/20, invalidPass=10/10 in under 1 s with CPU cap 30 s and wall cap 40 s.
+- Next subphase: 1.3 primal-dual envelope across schemes.
+
+References
+- https://reference.wolfram.com/language/ref/AllTrue.html
+- https://reference.wolfram.com/language/ref/RandomReal.html
