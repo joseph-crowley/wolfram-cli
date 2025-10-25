@@ -511,3 +511,15 @@ References
 
 - https://arxiv.org/abs/2203.08211
 - https://arxiv.org/abs/2210.04675
+
+## 2025-10-25 (Dispersive photon positivity)
+- Re-read the approach playbook priority list and selected item A for a new attempt focused on the partial-wave dispersion sum rules, explicitly contrasting the effort with the earlier direct inequality script.
+- Created `problems/eft-positivity-dispersion` and implemented `spectral_dispersion.wls`, which evaluates the plus, minus, even, and odd brackets of Equation 3.11 in arXiv:2210.04675 using discrete delta spectral inputs with Pareto-sampled masses and weights.
+- Resolved JSON export issues caused by Missing expressions by introducing a sanitiser and normalised candidate coefficient handling so the CLI stays ASCII safe.
+- Generated the baseline dataset via `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/eft-positivity-dispersion/spectral_dispersion.wls > problems/eft-positivity-dispersion/baseline.json`, obtaining f2 ≈ 9.19e1 and g2 ≈ 9.81e2 with a1 ≈ 6.71e1 and a2 ≈ 5.56e1, and recorded that four resonances already account for more than eighty per cent of g2.
+- Executed the stress run `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/eft-positivity-dispersion/spectral_dispersion.wls --seed=20251026 --samples=32 --tailExponent=2.2 --candidateCoefficients='{"a1":50.0,"a2":45.0}' > problems/eft-positivity-dispersion/stress_tail.json`, confirming that heavier tails drive g2 above 2.16e3 while the candidate coefficients remain positive but fall to roughly one third of the computed values.
+
+References
+
+- https://arxiv.org/abs/2210.04675
+- https://en.wikipedia.org/wiki/Euler%E2%80%93Heisenberg_Lagrangian
