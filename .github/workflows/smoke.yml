@@ -1,0 +1,65 @@
+name: smoke
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python version
+        run: python3 -V
+
+      - name: Quadrature selftest (guarded)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v wolframscript >/dev/null 2>&1; then
+            python3 - <<'PY'
+import subprocess, sys
+p = subprocess.run(["wolframscript","-file","scripts/quadrature_selftest.wls"],
+                   timeout=60, check=False, capture_output=True, text=True)
+open('/tmp/quad_selftest.json','w').write(p.stdout)
+print(p.stdout)
+PY
+          else
+            echo 'wolframscript not available on runner; skipping WL tests.'
+          fi
+
+      - name: LP certification selftest (guarded)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v wolframscript >/dev/null 2>&1; then
+            python3 - <<'PY'
+import subprocess, sys
+p = subprocess.run(["wolframscript","-file","scripts/lp_cert_selftest.wls"],
+                   timeout=60, check=False, capture_output=True, text=True)
+open('/tmp/lp_cert_selftest.json','w').write(p.stdout)
+print(p.stdout)
+PY
+          else
+            echo 'wolframscript not available on runner; skipping WL tests.'
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-artifacts
+          path: |
+            /tmp/quad_selftest.json
+            /tmp/lp_cert_selftest.json
+          if-no-files-found: ignore
+          retention-days: 14
+
