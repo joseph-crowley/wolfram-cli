@@ -478,3 +478,20 @@ References
   - `wolframscript -file physics_cli.wls --task=landau-mapper --topology=box --internalMasses='[0.5,0.5,0.5,0.5]' --externalSquares='[0,0,0,0]' --sRange='[0.1,5.0,60]' --tRange='[0.1,5.0,60]' --output=json`
   - Corresponding wrapper invocations verify delegation, artefacts stored under `problems/landau-singularity-mapper/runs/cli-integration-2025-10-25/`.
 - Updated RUNBOOK quick validation, domain playbook, and README to advertise the new task and CLI pathways.
+
+## 2025-10-25 (Massless positivity ensemble sweep)
+- Reviewed the approach playbook priority list and selected item B (IR subtracted positivity with massless states) for a new attempt focused on ensemble statistics.
+- Differentiation from the earlier 2025-10-25 run: instead of a single deterministic heavy spectrum, this project will survey fat-tailed ensembles drawn from Pareto-type distributions, tracking how regulator prescriptions and tail indices reshape the renormalised bound distribution.
+- Defined a deliverable set: standalone problem directory, CLI script that samples heavy tails via RandomVariate, JSON artifacts covering per-sample diagnostics and aggregate quantiles, and a README documenting methodology plus resilience checks.
+- Established working assumptions for the sweep: enforce twice-subtracted dispersion with arbitrary precision integration, compare analytic pole subtraction against cutoff regularisation for each sample, and capture violations whenever user-specified coefficients miss the derived bound.
+- Implemented `problems/massless-positivity-ensemble/ensemble_ir_subtraction.wls` with Pareto-controlled sampling, convergence guards, and JSON aggregation (bounded recursion, 60-digit precision).
+- Baseline run `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/massless-positivity-ensemble/ensemble_ir_subtraction.wls > problems/massless-positivity-ensemble/ensemble_baseline.json` succeeded for all 16 samples; the renormalised bound distribution spans 2.85e-3 to 1.51e-2 with median 7.19e-3 and q90 1.45e-2.
+- Test-coefficient sweep `/Applications/Wolfram.app/Contents/MacOS/wolframscript -file problems/massless-positivity-ensemble/ensemble_ir_subtraction.wls --cRen=0.01 > problems/massless-positivity-ensemble/ensemble_cren_0p01.json` flagged three violations (samples 2, 4, 10) giving a violation fraction 0.1875; margins range from -5.10e-3 to 7.15e-3, capturing both safety margin and failure modes.
+- Stored both JSON artifacts in the problem directory for audit readiness and noted that analytic counterterms continue to cancel the pole exactly across all sampled residues.
+- First `make smoke` invocation failed (`wolframscript: No such file or directory`) because the PATH in the build context omitted `/Applications/Wolfram.app/Contents/MacOS`; reran with `PATH=\"/Applications/Wolfram.app/Contents/MacOS:$PATH\" make smoke` and confirmed `tests run=4 failures=0`.
+
+References
+
+- https://reference.wolfram.com/language/ref/NIntegrate.html
+- https://reference.wolfram.com/language/ref/WorkingPrecision.html
+- https://reference.wolfram.com/language/ref/ParetoDistribution.html.en
