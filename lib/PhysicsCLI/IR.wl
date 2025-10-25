@@ -26,19 +26,21 @@ canonicalName[name_String] := Module[{s = ToLowerCase[StringTrim[name]]},
     s === "analytic", "analytic",
     s === "cutoff", "cutoff",
     s === "exclude_below" || s === "excludebelow", "exclude_below",
-    s === "band_gap" || s === "bandgap" || s === "bandgap", "band_gap",
+    s === "band_gap" || s === "bandgap", "band_gap",
+    s === "band_average" || s === "bandaverage", "band_average",
     s === "principal_value" || s === "principalvalue" || s === "pv", "principal_value",
     True, "unsupported"
   ]
 ];
 
-SchemeTypes[] := {"analytic", "cutoff", "exclude_below", "band_gap", "principal_value"};
+SchemeTypes[] := {"analytic", "cutoff", "exclude_below", "band_gap", "principal_value", "band_average"};
 
 requiredKeys["analytic"] := {};
 requiredKeys["principal_value"] := {};
 requiredKeys["cutoff"] := {"sCut"};
 requiredKeys["exclude_below"] := {"sMin"};
 requiredKeys["band_gap"] := {"sMin", "sMax"};
+requiredKeys["band_average"] := {"bands"};
 requiredKeys[_] := {};
 
 numericPositiveQ[x_] := NumericQ[x] && x > 0;
@@ -68,6 +70,12 @@ validateFields[name_, spec_Association] := Module[{ok = True, msg = "OK"},
          !KeyExistsQ[spec, "sMax"] || !numericPositiveQ[spec["sMax"]] ||
          !(spec["sMax"] > spec["sMin"]),
         ok = False; msg = "band_gap requires sMin>0, sMax>0, and sMax>sMin";
+      ],
+    "band_average",
+      Module[{bands = Lookup[spec, "bands", Missing["Invalid"]]},
+        If[!ListQ[bands] || !AllTrue[bands, MatchQ[#, {_?NumericQ, _?NumericQ}] &],
+          ok = False; msg = "band_average requires bands as list of {sMin,sMax}";
+        ];
       ],
     _,
       ok = False; msg = "unsupported scheme"
@@ -118,6 +126,14 @@ IntegrationIntervalsForScheme[spec_Association, opts_Association] := Module[
           {{threshold, sMin}, {sMax, upper}}
         ]
       ],
+    "band_average",
+      Module[{bands = Lookup[spec, "bands", {}], segs},
+        segs = Table[
+          {Max[threshold, N[b[[1]]]], Min[upper, N[b[[2]]]]},
+          {b, bands}
+        ];
+        Select[segs, #[[2]] > #[[1]] &]
+      ],
     _,
       Missing["InvalidScheme", "Unsupported scheme."]
   ]
@@ -144,4 +160,3 @@ CountertermForScheme[spec_Association, prefactor_, opts_Association] := Module[
 
 End[];
 EndPackage[];
-

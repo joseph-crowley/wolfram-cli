@@ -17,6 +17,7 @@ validCorpus = {
   <|"scheme" -> "excludeBelow", "sMin" -> 1.9|>,
   <|"scheme" -> "bandGap", "sMin" -> 2.2, "sMax" -> 3.1|>,
   <|"scheme" -> "principal_value"|>,
+  <|"scheme" -> "bandAverage", "bands" -> {{1.8, 2.2}, {2.6, 3.0}}|>,
   {"scheme" -> "cutoff", "sCut" -> 0.1},
   <|"scheme" -> "Exclude_Below", "sMin" -> 2.0|>,
   <|"scheme" -> "BANDGAP", "sMin" -> 2.4, "sMax" -> 2.8|>
