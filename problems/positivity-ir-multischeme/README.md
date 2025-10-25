@@ -24,15 +24,19 @@
   parameters, scheme definitions, precision controls) with hardened validators.
 - The heavy spectrum is modelled as a thresholded power law with tempering,
   ensuring integrability even when tails concentrate probability mass.
-- `NIntegrate` with 60-digit working precision evaluates the twice-subtracted
-  integrals over scheme-specific intervals (full spectrum, hard exclusions, or
-  band gaps). The prefactor `2/π` implements the dispersion kernel.
-- Each scheme reports the renormalised bound, counterterm size, residual shift
-  from the analytic baseline, and the fraction of heavy spectral weight that
-  was removed by the exclusion window.
+- Refined integration escalates precision and recursion depth under
+  `TimeConstrained` (default 60 s per interval) until successive evaluations
+  agree within the configurable tolerance given by
+  `intervalRelTol` times the absolute value plus `intervalAbsTol`. The final
+  JSON records the resulting interval with lower, upper, width, allowed width,
+  and attempt count.
+- Each scheme reports the renormalised bound, bound interval metadata,
+  counterterm size, residual shift from the analytic baseline, and the fraction
+  of heavy spectral weight removed by the exclusion window.
 - Aggregation logic computes the minimum and maximum bounds, spread,
-  consistency check against the analytic baseline, and the largest counterterm
-  or spectral loss.
+  compliance check against the analytic baseline, the largest counterterm or
+  spectral loss, and an `intervalCompliance` block summarising tolerance
+  satisfaction.
 
 ## Usage
 ```
@@ -57,6 +61,13 @@
 - `--schemes=` expects a JSON array of scheme dictionaries. Supported types:
   `analytic`, `cutoff` (requires `sCut > 0`), `excludeBelow` (requires
   `sMin`), and `bandGap` (requires `sMin < sMax`).
+- Interval controls:
+  - `--intervalAbsTol` sets the absolute component of the interval tolerance
+    (default `1e-10`).
+  - `--intervalRelTol` sets the relative component (default `1e-6`).
+  - `--intervalTimeCap` limits each `NIntegrate` call (default `60` seconds).
+  - `--intervalMaxRefine` sets the number of precision escalation rounds
+    (default `3`).
 - `--schemeTolerance` controls the numerical equality test that flags whether
   all schemes reproduce the analytic bound within tolerance.
 
@@ -75,6 +86,9 @@
   stressed run, confirming that hard cutoffs introduce massive regulator
   corrections even though the renormalised bound should match the analytic
   baseline.
+- Both runs report `aggregate.intervalCompliance` with
+  `allSchemesWithinTolerance` and `baseWithinTolerance` equal to `true`, and
+  the observed widths sit well below the configured tolerance envelope.
 
 ## Certified Envelope
 - Generate a primal-dual certificate for the multi-scheme envelope:
@@ -105,6 +119,8 @@
 - `multi_scheme_tailstress.json` — heavy-tail stress test with custom schemes
   and a failing candidate coefficient.
 - `multi_scheme_proof.json` — certified envelope artifact (gridNodes=20).
+- `scripts/interval_budget_selftest.py` — guarded harness that verifies
+  interval compliance on baseline and stressed configurations.
 
 ## Next Steps
 - Integrate the comparator into `physics_cli.wls` so CI can enforce the

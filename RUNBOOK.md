@@ -217,6 +217,14 @@ Requires FEM licence. Outputs eigenvalues and sampled modes (PNG export handled 
 - **Artifacts**
   - Store primary proof under `problems/positivity-ir-multischeme/`.
   - Keep refinement runs under `/tmp/` or purge after validation to avoid repository bloat.
+- **Interval budget verification**
+  ```sh
+  python3 scripts/interval_budget_selftest.py > /tmp/interval_budget_selftest.json
+  ```
+  Confirm the JSON reports `status` equal to `ok` and review
+  `baseline.maxWidth`, `baseline.maxAllowedWidth`, and the matching entries
+  for the stressed run. All widths must remain below the allowed envelope and
+  the boolean flags should report `true`.
 
 ---
 

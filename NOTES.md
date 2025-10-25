@@ -702,3 +702,14 @@ References
 References
 - https://reference.wolfram.com/language/ref/AllTrue.html
 - https://reference.wolfram.com/language/ref/RandomReal.html
+
+## 2025-10-25 18:05:28 UTC — Phase 1, Subphase 1.4 interval error budgets
+- Implemented multi-pass interval estimation in `multi_scheme_ir_bounds.wls` with precision, recursion, and wall caps escalated per attempt; outputs now include heavy-integral and renormalised-bound intervals with width, allowed width, and attempt counts.
+- Added macOS-safe `TimeConstrained` wrapping to every integral, per-scheme residual gating, and aggregated compliance metrics summarising maximum observed width and allowed envelope.
+- Introduced `scripts/interval_budget_selftest.py`, which wraps `guarded_run.sh` for baseline and stressed configurations and asserts interval compliance; shebang executable and 180 s timeout guard keep runs bounded.
+- Updated `multi_scheme_default.json` and `multi_scheme_tailstress.json` via guarded calls; baseline interval width 7.95e-17 with allowance 7.54e-9, stressed width 4.42e-16 with allowance 4.93e-8.
+- Documented new interval controls, compliance reporting, and Python harness usage in `README.md` and `RUNBOOK.md`.
+- Resolved prior `DirectedInfinity` export failure by serialising `integrationMax` markers as strings and sanitising payloads before JSON export.
+- Verification: `python3 scripts/interval_budget_selftest.py > /tmp/interval_budget_selftest.json` returned `status="ok"`; baseline and stress both report `allSchemesWithinTolerance=true` and `baseWithinTolerance=true`.
+- Git: committed `feat(subphase): add interval bounds and selftest harness [phase:1 subphase:1.4]` and pushed to `origin/main`.
+- Next subphase: 1.5 directed counterexample search.
